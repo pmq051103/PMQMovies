@@ -13,7 +13,7 @@ import {
 import { MovieRow, EpisodeList } from '@/components/movie';
 import { DetailSkeleton } from '@/components/common';
 import ShareButtons from '@/components/common/ShareButtons';
-import { useFavoriteStore } from '@/store';
+import { useFavoriteStore, useHistoryStore } from '@/store';
 import { useMovieDetail, useMoviesByGenre } from '@/hooks';
 import { ROUTES } from '@/constants';
 import { getImageUrl } from '@/utils';
@@ -48,6 +48,7 @@ export default function MovieDetailPage() {
   });
 
   const { isFavorite, addFavorite, removeFavorite } = useFavoriteStore();
+  const { getHistoryItem } = useHistoryStore();
   const isFav = slug ? isFavorite(slug) : false;
 
   const movieAsListItem = useMemo<MovieListItem | null>(() => {
@@ -317,7 +318,16 @@ export default function MovieDetailPage() {
               >
                 <button
                   type="button"
-                  onClick={() => navigate(`${ROUTES.WATCH}/${movie.slug}`)}
+                  onClick={() => {
+                    // Resume at the last-watched episode + server if we have
+                    // a history entry for this movie; otherwise the WatchPage
+                    // defaults to episode 1 of server 1.
+                    const h = getHistoryItem(movie.slug);
+                    const qs = h?.episode
+                      ? `?tap=${h.episode}${h.server ? `&sv=${encodeURIComponent(h.server)}` : ''}`
+                      : '';
+                    navigate(`${ROUTES.WATCH}/${movie.slug}${qs}`);
+                  }}
                   className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-700"
                 >
                   <FaPlay className="text-sm" />

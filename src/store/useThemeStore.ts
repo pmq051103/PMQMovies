@@ -8,11 +8,13 @@ interface ThemeState {
   setTheme: (theme: Theme) => void;
 }
 
-function getSystemTheme(): Theme {
-  if (typeof window === 'undefined' || !window.matchMedia) return 'dark';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
+/**
+ * Initial theme resolution.
+ * The app is designed dark-first (Netflix / streaming aesthetic), so
+ * new visitors always land in dark mode regardless of their OS theme
+ * preference. Existing users keep whatever they explicitly picked via
+ * the theme switcher (persisted in localStorage).
+ */
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'dark';
   try {
@@ -21,7 +23,7 @@ function getInitialTheme(): Theme {
   } catch {
     // localStorage unavailable (SSR, privacy mode, etc.)
   }
-  return getSystemTheme();
+  return 'dark';
 }
 
 function applyThemeClass(theme: Theme) {

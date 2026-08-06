@@ -282,6 +282,30 @@ export default function WatchPage() {
     return () => window.removeEventListener('message', handler);
   }, [autoNext, hasNextEpisode, goToNext]);
 
+  /* ---- Auto-next: TIMER FALLBACK based on movie.time ----
+     Many cross-origin players don't broadcast an "ended" event, so we
+     also arm a timer for the expected episode duration (movie.time in
+     minutes) plus a small buffer. When it fires we advance if autoNext
+     is on and there's a next episode. Timer resets whenever the
+     episode / server changes so it never fires stale. */
+  useEffect(() => {
+    if (!autoNext || !hasNextEpisode || !movie?.time) return;
+
+    // Parse "45", "45 phút", "1h 30m" style — grab minutes numerically.
+    const raw = String(movie.time);
+    const minMatch = raw.match(/\d+/);
+    const minutes = minMatch ? parseInt(minMatch[0], 10) : 0;
+    if (minutes <= 0 || minutes > 300) return;
+
+    // Duration in ms + 15s safety buffer to let credits play out.
+    const durationMs = minutes * 60 * 1000 + 15_000;
+    const timer = setTimeout(() => {
+      if (hasNextEpisode) goToNext();
+    }, durationMs);
+
+    return () => clearTimeout(timer);
+  }, [autoNext, hasNextEpisode, goToNext, movie?.time, serverIndex, episodeIndex]);
+
   /* ---- Loading / error states ---- */
   if (isLoading) {
     return (

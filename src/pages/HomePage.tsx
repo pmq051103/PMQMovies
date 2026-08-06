@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { FaPlay, FaChevronRight } from 'react-icons/fa';
 
 import {
   HeroBanner,
@@ -12,7 +14,7 @@ import {
 import { useHistoryStore } from '@/store';
 import { useLatestMovies, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
-import type { MovieListItem } from '@/types';
+import { getImageUrl } from '@/utils';
 
 /* -------------------------------------------------------------------------- */
 /* Animation                                                                   */
@@ -66,25 +68,22 @@ export default function HomePage() {
     [latestData],
   );
 
-  const continueWatchingMovies = useMemo<MovieListItem[]>(
+  // Continue-watching: build direct watch-page URLs with the episode +
+  // server params so clicking a card resumes at the exact tap the user
+  // stopped at (previously the row pointed at /phim/[slug] via
+  // MovieRow → MovieCard, which threw the user back to episode 1).
+  const continueWatchingItems = useMemo(
     () =>
       history.map((h) => ({
-        _id: 0,
-        name: h.name,
-        origin_name: '',
         slug: h.slug,
+        name: h.name,
         poster_url: h.poster_url,
         thumb_url: h.thumb_url,
-        year: 0,
-        tmdb: {
-          type: '',
-          id: '',
-          season: null,
-          vote_average: '0',
-          vote_count: 0,
-        },
-        imdb: { id: '' },
-        modified: { time: '' },
+        episode: h.episode,
+        server: h.server,
+        watchUrl: `${ROUTES.WATCH}/${h.slug}?tap=${h.episode}${
+          h.server ? `&sv=${encodeURIComponent(h.server)}` : ''
+        }`,
       })),
     [history],
   );
@@ -114,13 +113,53 @@ export default function HomePage() {
           initial="hidden"
           animate="visible"
         >
-          {continueWatchingMovies.length > 0 && (
+          {continueWatchingItems.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
-                title={t('home.continueWatching')}
-                movies={continueWatchingMovies}
-                viewAllLink={ROUTES.HISTORY}
-              />
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white sm:text-2xl">
+                  {t('home.continueWatching')}
+                </h2>
+                <Link
+                  to={ROUTES.HISTORY}
+                  className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
+                >
+                  {t('common.seeAll')}
+                  <FaChevronRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+              <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+                {continueWatchingItems.map((item) => (
+                  <Link
+                    key={item.slug}
+                    to={item.watchUrl}
+                    className="group relative flex-shrink-0"
+                    aria-label={`Xem tiếp ${item.name}`}
+                    title={item.name}
+                  >
+                    <div className="relative aspect-[2/3] w-32 overflow-hidden rounded-lg bg-gray-900 sm:w-40">
+                      <img
+                        src={getImageUrl(item.poster_url) || getImageUrl(item.thumb_url)}
+                        alt={item.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
+                          <FaPlay className="h-4 w-4 translate-x-0.5" />
+                        </div>
+                      </div>
+                      {item.episode && (
+                        <span className="absolute bottom-1.5 left-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+                          Tập {item.episode}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 max-w-[8rem] truncate text-sm font-medium text-gray-300 sm:max-w-[10rem]">
+                      {item.name}
+                    </p>
+                  </Link>
+                ))}
+              </div>
             </motion.section>
           )}
 
