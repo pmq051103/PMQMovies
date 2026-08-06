@@ -1,4 +1,5 @@
 import { apiGet } from './axiosClient';
+import { getMovieDetailDual } from './dualSource';
 import { API_ENDPOINTS } from '@/constants';
 import type {
   MovieListItem,
@@ -7,8 +8,12 @@ import type {
   FilterParams,
 } from '@/types';
 
+/**
+ * Dual-source movie detail: phimapi primary, vsmov fallback + episode
+ * server merge (extra playback sources).
+ */
 export async function getMovieDetail(slug: string): Promise<MovieDetailResponse> {
-  return apiGet<MovieDetailResponse>(API_ENDPOINTS.MOVIE_DETAIL(slug));
+  return getMovieDetailDual(slug);
 }
 
 export async function getMovies(

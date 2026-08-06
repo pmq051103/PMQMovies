@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import WelcomeTip from "@/components/common/WelcomeTip";
 import { useLanguageStore } from "@/store/useLanguageStore";
 
 /**
@@ -34,6 +35,9 @@ const MainLayout: React.FC = () => {
 
         <Footer />
       </div>
+
+      {/* First-visit tip about dual-source search */}
+      <WelcomeTip />
     </>
   );
 };

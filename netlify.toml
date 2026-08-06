@@ -2,7 +2,14 @@
   command = "npm run build"
   publish = "dist"
 
-# Proxy /api/* to vsmov.com to bypass CORS in production.
+# Secondary API — vsmov.com/api (bypasses CORS in prod).
+[[redirects]]
+  from = "/api2/*"
+  to = "https://vsmov.com/api/:splat"
+  status = 200
+  force = true
+
+# Primary API — phimapi.com (bypasses CORS in prod).
 [[redirects]]
   from = "/api/*"
   to = "https://phimapi.com/:splat"

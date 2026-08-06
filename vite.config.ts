@@ -14,9 +14,17 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    // Proxy /api requests to vsmov.com to bypass CORS during development.
-    // In production, use vercel.json / netlify.toml rewrites (both included).
+    // Dual-API proxy to bypass CORS in dev:
+    //   /api    → phimapi.com (primary — large catalog)
+    //   /api2   → vsmov.com/api (secondary — fresh Vietnamese titles)
+    // In production, vercel.json / netlify.toml mirror these rewrites.
     proxy: {
+      "/api2": {
+        target: "https://vsmov.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api2/, "/api"),
+      },
       "/api": {
         target: "https://phimapi.com",
         changeOrigin: true,
@@ -28,6 +36,12 @@ export default defineConfig({
   preview: {
     port: 3000,
     proxy: {
+      "/api2": {
+        target: "https://vsmov.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api2/, "/api"),
+      },
       "/api": {
         target: "https://phimapi.com",
         changeOrigin: true,

@@ -1,5 +1,6 @@
 import { apiGet } from "@/api/axiosClient";
-import { API_ENDPOINTS, LIST_SLUGS } from "@/constants";
+import { getLatestMoviesDual } from "@/api/dualSource";
+import { LIST_SLUGS } from "@/constants";
 import type {
   APIListResponse,
   FilterParams,
@@ -9,15 +10,13 @@ import type {
 
 /**
  * Fetch the latest updated movies for the homepage feed.
- * GET /danh-sach/phim-moi-cap-nhat?page=1
+ * Dual-sourced: phimapi (primary catalog) + vsmov (fresh titles),
+ * deduped by slug. See `dualSource.ts`.
  */
 export async function getLatestMovies(
   page = 1,
 ): Promise<APIListResponse<MovieListItem>> {
-  return apiGet<APIListResponse<MovieListItem>>(
-    API_ENDPOINTS.LATEST_MOVIES,
-    { params: { page } },
-  );
+  return getLatestMoviesDual(page);
 }
 
 /**
