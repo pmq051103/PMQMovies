@@ -24,15 +24,6 @@ const SORT_TYPES = [
   { value: 'asc', label: 'filter.ascending' },
 ] as const;
 
-/** Movie type options (includes Hoạt Hình + TV Shows which are NOT genres on phimapi). */
-const TYPE_OPTIONS = [
-  { value: '', labelKey: 'filter.allTypes' },
-  { value: 'single', labelKey: 'movie.type.single' },
-  { value: 'series', labelKey: 'movie.type.series' },
-  { value: 'hoathinh', labelKey: 'movie.type.hoathinh' },
-  { value: 'tvshows', labelKey: 'movie.type.tvshows' },
-] as const;
-
 const defaultFilters: FilterState = {
   genre: undefined,
   country: undefined,
@@ -259,24 +250,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           loading={countriesLoading}
           onChange={(v) => handleChange('country', v)}
         />
-
-        {/* Type (Loại phim) — includes Hoạt Hình & TV Shows */}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-400">
-            {t('filter.type', 'Loại phim')}
-          </label>
-          <select
-            value={localFilters.type ?? ''}
-            onChange={(e) => handleChange('type', e.target.value)}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 outline-none transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          >
-            {TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {t(opt.labelKey)}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* Year */}
         <div>
