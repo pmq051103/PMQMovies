@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="vi" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#e50914" />
+
+    <!-- Primary SEO -->
+    <title>PMQMovies — Xem phim online HD miễn phí, Vietsub, Thuyết minh, Lồng tiếng</title>
+    <meta
+      name="description"
+      content="PMQMovies — nền tảng xem phim online HD miễn phí, giao diện Netflix-style. Phim lẻ, phim bộ, hoạt hình, TV Shows Vietsub / Thuyết minh / Lồng tiếng, cập nhật mới nhất mỗi ngày."
+    />
+    <meta
+      name="keywords"
+      content="PMQMovies, PMQ Movies, PMQ, xem phim online, xem phim miễn phí, phim mới, phim lẻ, phim bộ, phim hd, phim vietsub, phim thuyết minh, phim lồng tiếng, phim netflix, phim đề xuất, phim trending, phim hay 2026, streaming phim, xem phim online free, PMQMovies phim"
+    />
+    <meta name="author" content="PMQMovies - Phạm Minh Quang" />
+    <meta name="application-name" content="PMQMovies" />
+    <meta name="apple-mobile-web-app-title" content="PMQMovies" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PMQMovies" />
+    <meta property="og:title" content="PMQMovies — Xem phim online HD miễn phí" />
+    <meta
+      property="og:description"
+      content="Xem phim online chất lượng cao HD, cập nhật liên tục. Phim lẻ, phim bộ, hoạt hình, TV Shows Vietsub / Thuyết minh / Lồng tiếng."
+    />
+    <meta property="og:image" content="/logo.png" />
+    <meta property="og:image:width" content="297" />
+    <meta property="og:image:height" content="200" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PMQMovies — Xem phim online HD miễn phí" />
+    <meta
+      name="twitter:description"
+      content="Xem phim online HD miễn phí, cập nhật mới nhất mỗi ngày. Vietsub, Thuyết minh, Lồng tiếng."
+    />
+    <meta name="twitter:image" content="/logo.png" />
+
+    <!-- JSON-LD Structured Data: WebSite (enables sitelink search box)  -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "PMQMovies",
+        "alternateName": ["PMQ Movies", "PMQ"],
+        "url": "/",
+        "description": "PMQMovies — Xem phim online HD miễn phí, Vietsub, Thuyết minh, Lồng tiếng.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": { "@type": "EntryPoint", "urlTemplate": "/tim-kiem?q={search_term_string}" },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- JSON-LD Structured Data: Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "PMQMovies",
+        "url": "/",
+        "logo": "/logo.png",
+        "founder": { "@type": "Person", "name": "Phạm Minh Quang" },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+84-346-991-600",
+          "email": "pmquang05112003@gmail.com",
+          "contactType": "customer support",
+          "areaServed": "VN",
+          "availableLanguage": ["Vietnamese", "English"]
+        },
+        "sameAs": [
+          "https://www.facebook.com/pmq05",
+          "https://www.tiktok.com/@q05.11",
+          "https://zalo.me/0346991600"
+        ]
+      }
+    </script>
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://phimimg.com" />
+    <link rel="dns-prefetch" href="https://phimapi.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Fallback content for crawlers that don't run JS. Real users see React. -->
+    <noscript>
+      <div style="max-width:640px;margin:2rem auto;padding:1rem;text-align:center;font-family:sans-serif;color:#fff;background:#111">
+        <h1>PMQMovies</h1>
+        <p>Vui lòng bật JavaScript để sử dụng PMQMovies — nền tảng xem phim online HD miễn phí với phim lẻ, phim bộ, hoạt hình và TV Shows.</p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

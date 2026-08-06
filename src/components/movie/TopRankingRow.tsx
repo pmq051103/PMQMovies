@@ -1,0 +1,91 @@
+import { memo } from "react";
+import { Link } from "react-router-dom";
+import { FaChevronRight } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
+
+import { ROUTES } from "@/constants";
+import { getImageUrl } from "@/utils";
+import type { MovieListItem } from "@/types";
+
+interface TopRankingRowProps {
+  title: string;
+  movies: MovieListItem[];
+  viewAllLink?: string;
+  /** How many to show. Defaults to 10 (Netflix Top 10 style). */
+  limit?: number;
+}
+
+/**
+ * Netflix "Top 10" style ranking row — each card renders with a huge
+ * outlined rank digit (1..10) behind the poster, giving the whole strip
+ * a magazine feel that stands out from the flat horizontal rows.
+ */
+const TopRankingRow: React.FC<TopRankingRowProps> = ({
+  title,
+  movies,
+  viewAllLink,
+  limit = 10,
+}) => {
+  const { t } = useTranslation();
+  const items = movies.slice(0, limit);
+  if (items.length === 0) return null;
+
+  return (
+    <section className="w-full">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-white sm:text-2xl">{title}</h2>
+        {viewAllLink && (
+          <Link
+            to={viewAllLink}
+            className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
+          >
+            {t("common.seeAll")}
+            <FaChevronRight className="h-2.5 w-2.5" />
+          </Link>
+        )}
+      </div>
+
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+        {items.map((m, idx) => (
+          <Link
+            key={m._id ?? m.slug}
+            to={`${ROUTES.MOVIE_DETAIL}/${m.slug}`}
+            className="group relative flex-shrink-0"
+            aria-label={`${idx + 1}. ${m.name}`}
+          >
+            <div className="flex items-end gap-1">
+              {/* Giant rank number */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none select-none text-[6rem] font-black leading-none tracking-tighter text-transparent sm:text-[8rem]"
+                style={{
+                  WebkitTextStroke: "3px #ef4444",
+                  color: "transparent",
+                }}
+              >
+                {idx + 1}
+              </span>
+
+              {/* Poster */}
+              <div className="relative aspect-[2/3] w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-900 sm:w-32">
+                <img
+                  src={getImageUrl(m.poster_url) || getImageUrl(m.thumb_url)}
+                  alt={m.name}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/25" />
+              </div>
+            </div>
+
+            <p className="mt-2 max-w-[9rem] truncate text-sm font-medium text-gray-300 sm:max-w-[11rem]">
+              {m.name}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+export default memo(TopRankingRow);

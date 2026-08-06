@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://phimapi.com/:path*" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}

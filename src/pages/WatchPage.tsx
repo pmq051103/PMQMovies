@@ -1,0 +1,608 @@
+import { useEffect, useMemo, useCallback, useRef } from 'react';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router';
+import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FaStepBackward,
+  FaStepForward,
+  FaServer,
+  FaFilm,
+  FaToggleOn,
+  FaToggleOff,
+  FaPlay,
+} from 'react-icons/fa';
+
+import { EpisodeList, MovieRow } from '@/components/movie';
+import { ROUTES } from '@/constants';
+import { useMovieDetail, useMoviesInGenre } from '@/hooks';
+import { usePlayerStore, useHistoryStore } from '@/store';
+import { getImageUrl } from '@/utils';
+import type { Episode } from '@/types';
+
+/* ------------------------------------------------------------------ */
+/* Animation variants                                                  */
+/* ------------------------------------------------------------------ */
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4, ease: 'easeOut' } },
+};
+
+/* ------------------------------------------------------------------ */
+/* Helper: resolve server/episode indices from URL params              */
+/* ------------------------------------------------------------------ */
+
+function resolveIndices(
+  episodes: Episode[],
+  svParam: string | null,
+  tapParam: string | null,
+): { serverIndex: number; episodeIndex: number } {
+  let serverIndex = 0;
+  let episodeIndex = 0;
+
+  if (svParam) {
+    const idx = episodes.findIndex(
+      (ep) => ep.server_name === svParam,
+    );
+    if (idx !== -1) serverIndex = idx;
+  }
+
+  if (tapParam && episodes[serverIndex]) {
+    const idx = episodes[serverIndex].server_data.findIndex(
+      (sd) => sd.slug === tapParam,
+    );
+    if (idx !== -1) episodeIndex = idx;
+  }
+
+  return { serverIndex, episodeIndex };
+}
+
+/* ------------------------------------------------------------------ */
+/* Related movies — "Bạn cũng có thể thích"                            */
+/* ------------------------------------------------------------------ */
+
+function RelatedMovies({
+  categorySlug,
+  currentSlug,
+}: {
+  categorySlug?: string;
+  currentSlug?: string;
+}) {
+  const { t } = useTranslation();
+  const { data } = useMoviesInGenre(categorySlug, { page: 1 });
+
+  const related = (data?.items ?? [])
+    .filter((m) => m.slug !== currentSlug)
+    .slice(0, 12);
+
+  if (!categorySlug || related.length === 0) return null;
+
+  return (
+    <section className="mt-12">
+      <MovieRow
+        title={t('watch.youMightLike', 'Bạn cũng có thể thích')}
+        movies={related}
+      />
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* WatchPage                                                           */
+/* ------------------------------------------------------------------ */
+
+export default function WatchPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+
+  const tapParam = searchParams.get('tap');
+  const svParam = searchParams.get('sv');
+
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  /* ---- Data fetching ---- */
+  const { data, isLoading, isError } = useMovieDetail(slug);
+  const movie = data?.movie ?? null;
+  const episodes = data?.episodes ?? [];
+
+  /* ---- Store ---- */
+  const {
+    cinemaMode,
+    autoNext,
+    setCurrentMovie,
+    setCurrentEpisode,
+    setCinemaMode,
+    setAutoNext,
+  } = usePlayerStore();
+
+  const { addToHistory, getProgress } = useHistoryStore();
+
+  /* ---- Resolve indices ---- */
+  const { serverIndex, episodeIndex } = useMemo(
+    () => resolveIndices(episodes, svParam, tapParam),
+    [episodes, svParam, tapParam],
+  );
+
+  const currentServer = episodes[serverIndex] ?? null;
+  const currentEpisodeData = currentServer?.server_data[episodeIndex] ?? null;
+  const embedUrl = currentEpisodeData?.link_embed ?? '';
+
+  /* ---- Sync store with resolved episode ---- */
+  useEffect(() => {
+    if (movie) {
+      setCurrentMovie(movie);
+    }
+  }, [movie, setCurrentMovie]);
+
+  useEffect(() => {
+    setCurrentEpisode({ serverIndex, episodeIndex });
+  }, [serverIndex, episodeIndex, setCurrentEpisode]);
+
+  /* ---- Resume prompt ---- */
+  const savedProgress = useMemo(() => {
+    if (!slug || !currentEpisodeData) return 0;
+    return getProgress(slug, currentEpisodeData.slug);
+  }, [slug, currentEpisodeData, getProgress]);
+
+  const showResumePrompt = savedProgress > 0;
+
+  /* ---- Navigation helpers ---- */
+  const navigateToEpisode = useCallback(
+    (sIdx: number, eIdx: number) => {
+      const server = episodes[sIdx];
+      if (!server) return;
+      const ep = server.server_data[eIdx];
+      if (!ep) return;
+      navigate(
+        `${ROUTES.WATCH}/${slug}?tap=${ep.slug}&sv=${encodeURIComponent(server.server_name)}`,
+        { replace: true },
+      );
+    },
+    [episodes, slug, navigate],
+  );
+
+  const hasPrevEpisode = episodeIndex > 0;
+  const hasNextEpisode =
+    currentServer != null && episodeIndex < currentServer.server_data.length - 1;
+
+  const goToPrev = useCallback(() => {
+    if (hasPrevEpisode) {
+      navigateToEpisode(serverIndex, episodeIndex - 1);
+    }
+  }, [hasPrevEpisode, navigateToEpisode, serverIndex, episodeIndex]);
+
+  const goToNext = useCallback(() => {
+    if (hasNextEpisode) {
+      navigateToEpisode(serverIndex, episodeIndex + 1);
+    }
+  }, [hasNextEpisode, navigateToEpisode, serverIndex, episodeIndex]);
+
+  /* ---- Save watch history on unmount / beforeunload ---- */
+  useEffect(() => {
+    const saveHistory = () => {
+      if (!movie || !currentEpisodeData || !currentServer) return;
+      addToHistory({
+        slug: movie.slug,
+        name: movie.name,
+        poster_url: movie.poster_url,
+        thumb_url: movie.thumb_url,
+        episode: currentEpisodeData.slug,
+        server: currentServer.server_name,
+        progress: 0,
+        duration: 0,
+        updatedAt: Date.now(),
+        type: movie.type,
+      });
+    };
+
+    window.addEventListener('beforeunload', saveHistory);
+
+    return () => {
+      window.removeEventListener('beforeunload', saveHistory);
+      saveHistory();
+    };
+  }, [movie, currentEpisodeData, currentServer, addToHistory]);
+
+  /* ---- Keyboard shortcuts ---- */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          goToPrev();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          goToNext();
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          try {
+            iframeRef.current?.requestFullscreen();
+          } catch {
+            /* fullscreen not supported */
+          }
+          break;
+        case 'Escape':
+          if (cinemaMode) {
+            setCinemaMode(false);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goToPrev, goToNext, cinemaMode, setCinemaMode]);
+
+  /* ---- Loading / error states ---- */
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-700 border-t-red-500" />
+          <p className="text-gray-400">{t('common.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !movie) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-950 px-4 text-center">
+        <FaFilm className="mb-4 text-5xl text-gray-600" />
+        <h2 className="mb-2 text-xl font-semibold text-gray-200">
+          {t('common.error')}
+        </h2>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 rounded-lg bg-red-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700"
+        >
+          {t('common.retry')}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Helmet>
+        <title>
+          {movie.name}
+          {currentEpisodeData ? ` - ${currentEpisodeData.name}` : ''}
+        </title>
+        <meta
+          property="og:title"
+          content={`${movie.name}${currentEpisodeData ? ` - ${currentEpisodeData.name}` : ''}`}
+        />
+        <meta property="og:image" content={getImageUrl(movie.thumb_url)} />
+      </Helmet>
+
+      {/* Cinema mode overlay */}
+      <AnimatePresence>
+        {cinemaMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/90"
+            onClick={() => setCinemaMode(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="min-h-screen bg-gray-950 text-white"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          {/* Main layout: player + sidebar */}
+          <div className="flex flex-col gap-6 lg:flex-row">
+            {/* Left column: player + controls */}
+            <div className="flex-1">
+              {/* Player */}
+              <div
+                className={`relative overflow-hidden rounded-xl bg-black ${
+                  cinemaMode ? 'relative z-50' : ''
+                }`}
+              >
+                <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                  {embedUrl ? (
+                    <iframe
+                      ref={iframeRef}
+                      src={embedUrl}
+                      className="absolute inset-0 h-full w-full"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation"
+                      allowFullScreen
+                      title={currentEpisodeData?.name ?? movie.name}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                      <FaFilm className="text-4xl text-gray-600" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Resume banner */}
+              <AnimatePresence>
+                {showResumePrompt && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mt-3 flex items-center gap-3 rounded-lg bg-red-600/20 border border-red-600/30 px-4 py-3"
+                  >
+                    <FaPlay className="shrink-0 text-red-400" />
+                    <p className="flex-1 text-sm text-gray-200">
+                      {t('watch.resumePrompt')}
+                    </p>
+                    <button
+                      className="shrink-0 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                    >
+                      {t('watch.resume')}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Movie info */}
+              <div className="mt-4 space-y-1">
+                <Link
+                  to={`${ROUTES.MOVIE_DETAIL}/${movie.slug}`}
+                  className="text-xl font-bold text-white transition-colors hover:text-red-400"
+                >
+                  {movie.name}
+                </Link>
+                {movie.origin_name && movie.origin_name !== movie.name && (
+                  <p className="text-sm italic text-gray-500">{movie.origin_name}</p>
+                )}
+                {currentEpisodeData && (
+                  <p className="text-sm text-gray-400">
+                    {currentEpisodeData.name}
+                  </p>
+                )}
+                {/* Compact meta badges */}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  {movie.year > 0 && (
+                    <span className="rounded bg-white/10 px-2 py-0.5 text-gray-300">
+                      {movie.year}
+                    </span>
+                  )}
+                  {movie.quality && (
+                    <span className="rounded bg-blue-600 px-2 py-0.5 font-semibold text-white">
+                      {movie.quality}
+                    </span>
+                  )}
+                  {movie.lang && (
+                    <span className="rounded bg-emerald-600 px-2 py-0.5 font-semibold text-white">
+                      {movie.lang}
+                    </span>
+                  )}
+                  {movie.time && (
+                    <span className="text-gray-400">{movie.time}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Player controls bar */}
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {/* Prev / Next buttons */}
+                <button
+                  onClick={goToPrev}
+                  disabled={!hasPrevEpisode}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <FaStepBackward className="h-3.5 w-3.5" />
+                  {t('watch.prevEpisode')}
+                </button>
+
+                <button
+                  onClick={goToNext}
+                  disabled={!hasNextEpisode}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {t('watch.nextEpisode')}
+                  <FaStepForward className="h-3.5 w-3.5" />
+                </button>
+
+                <div className="ml-auto flex items-center gap-4">
+                  {/* Auto next toggle */}
+                  <button
+                    onClick={() => setAutoNext(!autoNext)}
+                    className="inline-flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-white"
+                  >
+                    {autoNext ? (
+                      <FaToggleOn className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <FaToggleOff className="h-5 w-5" />
+                    )}
+                    {t('watch.autoNext')}
+                  </button>
+
+                  {/* Cinema mode toggle */}
+                  <button
+                    onClick={() => setCinemaMode(!cinemaMode)}
+                    className="inline-flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-white"
+                  >
+                    {cinemaMode ? (
+                      <FaToggleOn className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <FaToggleOff className="h-5 w-5" />
+                    )}
+                    {t('watch.cinemaMode')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Server tabs */}
+              {episodes.length > 1 && (
+                <div className="mt-6">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">
+                    {t('watch.server')}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {episodes.map((ep, idx) => (
+                      <button
+                        key={ep.server_name}
+                        onClick={() => navigateToEpisode(idx, 0)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                          idx === serverIndex
+                            ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                        }`}
+                      >
+                        <FaServer className="h-3 w-3" />
+                        {ep.server_name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Episode list — only show when the movie has real episodes.
+                  Single-"Full" phim lẻ hides the sidebar entirely to avoid a
+                  meaningless "Xem Phim" button on a page you're already
+                  watching. Instead, show a subtle single-episode notice. */}
+              {(() => {
+                const hasMultipleEpisodes =
+                  episodes.length > 1 ||
+                  (currentServer?.server_data.length ?? 0) > 1;
+
+                if (!hasMultipleEpisodes) {
+                  return (
+                    <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3 text-sm text-gray-400 lg:hidden">
+                      {t("movie.singleMovieNote")}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="mt-6 lg:hidden">
+                    <EpisodeList
+                      episodes={episodes}
+                      currentEpisodeSlug={currentEpisodeData?.slug}
+                      currentServerName={currentServer?.server_name}
+                      movieSlug={movie.slug}
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Right sidebar (desktop only) — only when there are real episodes */}
+            {(episodes.length > 1 ||
+              (currentServer?.server_data.length ?? 0) > 1) && (
+              <div className="hidden w-80 shrink-0 lg:block xl:w-96">
+                <div className="sticky top-20">
+                  <EpisodeList
+                    episodes={episodes}
+                    currentEpisodeSlug={currentEpisodeData?.slug}
+                    currentServerName={currentServer?.server_name}
+                    movieSlug={movie.slug}
+                    compact
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Description + meta panel */}
+          {(movie.content || movie.category?.length || movie.director?.length) && (
+            <section className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <h2 className="mb-3 text-lg font-semibold text-white">
+                  {t('movie.overview')}
+                </h2>
+                <div
+                  className="rich-text prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: movie.content || '' }}
+                />
+              </div>
+
+              <aside className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5 text-sm">
+                {movie.category && movie.category.length > 0 && (
+                  <div>
+                    <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      {t('movie.genres', 'Thể loại')}
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {movie.category.map((g) => (
+                        <Link
+                          key={g.id}
+                          to={`/the-loai/${g.slug}`}
+                          className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-300 transition-colors hover:bg-red-600 hover:text-white"
+                        >
+                          {g.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {movie.country && movie.country.length > 0 && (
+                  <div>
+                    <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      {t('movie.country', 'Quốc gia')}
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {movie.country.map((c) => (
+                        <Link
+                          key={c.id}
+                          to={`/quoc-gia/${c.slug}`}
+                          className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-300 transition-colors hover:bg-red-600 hover:text-white"
+                        >
+                          {c.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {movie.director && movie.director.length > 0 && (
+                  <div>
+                    <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      {t('movie.director')}
+                    </h4>
+                    <p className="text-gray-300">{movie.director.join(', ')}</p>
+                  </div>
+                )}
+                {movie.actor && movie.actor.length > 0 && (
+                  <div>
+                    <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      {t('movie.cast')}
+                    </h4>
+                    <p className="text-gray-300 leading-relaxed">
+                      {movie.actor.slice(0, 8).join(', ')}
+                      {movie.actor.length > 8 && '…'}
+                    </p>
+                  </div>
+                )}
+              </aside>
+            </section>
+          )}
+
+          {/* You might also like */}
+          <RelatedMovies
+            categorySlug={movie.category?.[0]?.slug}
+            currentSlug={movie.slug}
+          />
+        </div>
+      </motion.div>
+    </>
+  );
+}
