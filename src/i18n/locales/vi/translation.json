@@ -11,7 +11,9 @@
     "history": "Lịch Sử",
     "menu": "Menu",
     "close": "Đóng",
-    "profile": "Tài Khoản"
+    "profile": "Tài Khoản",
+    "nowPlaying": "Chiếu Rạp",
+    "upcoming": "Sắp Chiếu"
   },
   "hero": {
     "watchNow": "Xem Ngay",
@@ -52,7 +54,14 @@
     "vietsub": "Phim Vietsub",
     "thuyetMinh": "Phim Thuyết Minh",
     "longTieng": "Phim Lồng Tiếng",
-    "tvShowsCategory": "TV Shows"
+    "tvShowsCategory": "TV Shows",
+    "updatedToday": "Phim Mới Cập Nhật Hôm Nay",
+    "nowPlaying": "Phim Chiếu Rạp",
+    "topMustWatch": "Top Phim Đáng Xem",
+    "topNowPlaying": "Top 10 Chiếu Rạp",
+    "upcoming": "Phim Sắp Chiếu",
+    "phim4k": "Phim 4K",
+    "subteam": "Subteam Đề Cử"
   },
   "movie": {
     "watchNow": "Xem Ngay",
@@ -170,7 +179,9 @@
     "sortModified": "Mới Cập Nhật",
     "sortId": "Mặc Định",
     "type": "Loại Phim",
-    "searchInResults": "Tìm trong danh sách..."
+    "searchInResults": "Tìm trong danh sách...",
+    "searchByName": "Tìm theo tên phim...",
+    "nowPlaying": "Chiếu Rạp"
   },
   "common": {
     "loading": "Đang tải...",
@@ -285,7 +296,9 @@
     "historyTitle": "Lịch Sử Xem Phim",
     "topRatedTitle": "Phim Đánh Giá Cao",
     "genresTitle": "Thể Loại Phim",
-    "countriesTitle": "Phim Theo Quốc Gia"
+    "countriesTitle": "Phim Theo Quốc Gia",
+    "nowPlayingTitle": "Phim Chiếu Rạp - Xem Phim Chiếu Rạp Online",
+    "upcomingTitle": "Phim Sắp Chiếu - Xem Trailer Phim Mới"
   },
   "welcome": {
     "title": "Mẹo cho bạn",

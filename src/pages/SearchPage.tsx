@@ -69,14 +69,16 @@ export default function SearchPage() {
     }
   }, [debouncedKeyword, setSearchParams]);
 
-  /* ---- Sync URL param to local state on mount ---- */
+  /* ---- Sync URL param → local state whenever `q` changes ---- */
   useEffect(() => {
-    if (qParam && !keyword) {
+    // When the user arrives from SearchModal (or browser navigation)
+    // the URL `q` param may differ from the local `keyword` state.
+    // Keeping them in sync prevents stale results.
+    if (qParam !== keyword) {
       setKeyword(qParam);
     }
-    // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [qParam]);
 
   /* ---- Focus input on mount ---- */
   useEffect(() => {

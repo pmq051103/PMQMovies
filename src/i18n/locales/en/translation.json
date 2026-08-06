@@ -11,7 +11,9 @@
     "history": "History",
     "menu": "Menu",
     "close": "Close",
-    "profile": "Profile"
+    "profile": "Profile",
+    "nowPlaying": "In Theaters",
+    "upcoming": "Upcoming"
   },
   "hero": {
     "watchNow": "Watch Now",
@@ -52,7 +54,14 @@
     "vietsub": "Vietsub Movies",
     "thuyetMinh": "Voiceover",
     "longTieng": "Vietnamese Dubbed",
-    "tvShowsCategory": "TV Shows"
+    "tvShowsCategory": "TV Shows",
+    "updatedToday": "Updated Today",
+    "nowPlaying": "Now In Theaters",
+    "topMustWatch": "Top Must-Watch Movies",
+    "topNowPlaying": "Top 10 In Theaters",
+    "upcoming": "Upcoming Movies",
+    "phim4k": "4K Movies",
+    "subteam": "Subteam Picks"
   },
   "movie": {
     "watchNow": "Watch Now",
@@ -170,7 +179,9 @@
     "sortModified": "Recently Updated",
     "sortId": "Default",
     "type": "Type",
-    "searchInResults": "Search in list..."
+    "searchInResults": "Search in list...",
+    "searchByName": "Search by movie name...",
+    "nowPlaying": "In Theaters"
   },
   "common": {
     "loading": "Loading...",
@@ -285,7 +296,9 @@
     "historyTitle": "Watch History",
     "topRatedTitle": "Top Rated Movies",
     "genresTitle": "Movie Genres",
-    "countriesTitle": "Movies by Country"
+    "countriesTitle": "Movies by Country",
+    "nowPlayingTitle": "Now Playing - Watch In Theater Movies Online",
+    "upcomingTitle": "Upcoming Movies - Watch New Trailers"
   },
   "welcome": {
     "title": "Quick tip",

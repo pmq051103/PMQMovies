@@ -10,7 +10,11 @@ const languages: { code: Language; label: string }[] = [
   { code: 'vi', label: 'Tiếng Việt' },
 ];
 
-const LanguageSwitcher: React.FC = () => {
+interface LanguageSwitcherProps {
+  dropUp?: boolean;
+}
+
+const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ dropUp = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { i18n } = useTranslation();
@@ -49,11 +53,13 @@ const LanguageSwitcher: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            initial={{ opacity: 0, scale: 0.95, y: dropUp ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            exit={{ opacity: 0, scale: 0.95, y: dropUp ? 4 : -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50"
+            className={`absolute right-0 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50 ${
+              dropUp ? 'bottom-full mb-2' : 'mt-2'
+            }`}
           >
             {languages.map((lang) => (
               <button

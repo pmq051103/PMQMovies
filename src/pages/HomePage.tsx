@@ -11,6 +11,7 @@ import {
   SpotlightGrid,
   TopRankingRow,
 } from '@/components/movie';
+import MovieCarousel from '@/components/movie/MovieCarousel';
 import { useHistoryStore } from '@/store';
 import { useLatestMovies, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
@@ -63,15 +64,25 @@ export default function HomePage() {
     sort_type: 'desc',
   });
 
+  // New sections
+  const { data: nowPlayingData } = useMoviesBySlug('phim-chieu-rap', { page: 1 });
+  const { data: topRatedData } = useMoviesBySlug('phim-le', {
+    page: 1,
+    sort_field: 'tmdb.vote_average',
+    sort_type: 'desc',
+  });
+  const { data: topNowPlayingByRating } = useMoviesBySlug('phim-chieu-rap', {
+    page: 1,
+    sort_field: 'tmdb.vote_average',
+    sort_type: 'desc',
+  });
+  const { data: subteamData } = useMoviesBySlug('subteam', { page: 1 });
+
   const heroBannerMovies = useMemo(
     () => latestData?.items.slice(0, 6) ?? [],
     [latestData],
   );
 
-  // Continue-watching: build direct watch-page URLs with the episode +
-  // server params so clicking a card resumes at the exact tap the user
-  // stopped at (previously the row pointed at /phim/[slug] via
-  // MovieRow → MovieCard, which threw the user back to episode 1).
   const continueWatchingItems = useMemo(
     () =>
       history.map((h) => ({
@@ -88,10 +99,33 @@ export default function HomePage() {
     [history],
   );
 
-  // Featured slice for the SpotlightGrid — take fresh items from latest.
+  // Movies updated today — filter from latest by modified date
+  const updatedTodayItems = useMemo(() => {
+    if (!latestData?.items) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return latestData.items.filter((m: any) => {
+      const modTime = m.modified?.time;
+      if (!modTime) return false;
+      return new Date(modTime).toISOString().slice(0, 10) === today;
+    });
+  }, [latestData]);
+
+  // Featured slice for SpotlightGrid
   const spotlightItems = useMemo(
     () => latestData?.items.slice(6, 11) ?? [],
     [latestData],
+  );
+
+  // SpotlightGrid for chiếu rạp — 1 big + 4 small
+  const nowPlayingSpotlight = useMemo(
+    () => nowPlayingData?.items?.slice(0, 5) ?? [],
+    [nowPlayingData],
+  );
+
+  // SpotlightGrid for anime
+  const animeSpotlight = useMemo(
+    () => anime?.items?.slice(0, 5) ?? [],
+    [anime],
   );
 
   return (
@@ -113,6 +147,7 @@ export default function HomePage() {
           initial="hidden"
           animate="visible"
         >
+          {/* ── Continue Watching ── */}
           {continueWatchingItems.length > 0 && (
             <motion.section variants={itemVariants}>
               <div className="mb-4 flex items-center justify-between">
@@ -163,7 +198,7 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Spotlight — 1 big + 4 small (asymmetric grid) */}
+          {/* ── Spotlight — 1 big + 4 small (asymmetric grid) ── */}
           {spotlightItems.length === 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
@@ -173,17 +208,62 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Trending / newest — standard horizontal row */}
+          {/* ── Updated Today — landscape cards (MovieCarousel) ── */}
+          {updatedTodayItems.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <MovieCarousel
+                title={t('home.updatedToday', 'Phim Mới Cập Nhật Hôm Nay')}
+                movies={updatedTodayItems}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Now Playing / Chiếu Rạp — SpotlightGrid style ── */}
+          {nowPlayingSpotlight.length === 5 && (
+            <motion.section variants={itemVariants}>
+              <SpotlightGrid
+                title={t('home.nowPlaying', 'Phim Chiếu Rạp')}
+                movies={nowPlayingSpotlight}
+                viewAllLink={ROUTES.NOW_PLAYING}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Top Phim Đáng Xem — Netflix ranking with ⭐ ── */}
+          {topRatedData?.items && topRatedData.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <TopRankingRow
+                title={t('home.topMustWatch', 'Top Phim Đáng Xem')}
+                movies={topRatedData.items}
+                viewAllLink={ROUTES.TOP_RATED}
+                showRating
+              />
+            </motion.section>
+          )}
+
+          {/* ── Trending — landscape cards (MovieCarousel) ── */}
           {latestData?.items && latestData.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <MovieCarousel
                 title={t('home.trending')}
                 movies={latestData.items.slice(0, 20)}
               />
             </motion.section>
           )}
 
-          {/* Top 10 movies by views — Netflix-style ranking */}
+          {/* ── Top 10 Chiếu Rạp — ranking with ⭐ ── */}
+          {topNowPlayingByRating?.items && topNowPlayingByRating.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <TopRankingRow
+                title={t('home.topNowPlaying', 'Top 10 Chiếu Rạp')}
+                movies={topNowPlayingByRating.items}
+                viewAllLink={ROUTES.NOW_PLAYING}
+                showRating
+              />
+            </motion.section>
+          )}
+
+          {/* ── Top 10 Phim Lẻ — ranking by views ── */}
           {topMoviesByViews?.items && topMoviesByViews.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <TopRankingRow
@@ -194,7 +274,7 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Latest movies */}
+          {/* ── Latest Movies — poster cards (MovieRow) ── */}
           {singleMovies?.items && singleMovies.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <MovieRow
@@ -205,18 +285,17 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Latest TV shows */}
+          {/* ── Latest TV Shows — landscape cards (MovieCarousel) ── */}
           {tvShows?.items && tvShows.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <MovieCarousel
                 title={t('home.latestTVShows')}
                 movies={tvShows.items}
-                viewAllLink={ROUTES.TV_SHOWS}
               />
             </motion.section>
           )}
 
-          {/* Top 10 series by views */}
+          {/* ── Top 10 Phim Bộ — ranking by views ── */}
           {topSeriesByViews?.items && topSeriesByViews.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <TopRankingRow
@@ -227,14 +306,17 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Anime */}
-          {anime?.items && anime.items.length > 0 && (
+          {/* ── Anime — SpotlightGrid (asymmetric) ── */}
+          {animeSpotlight.length === 5 && (
             <motion.section variants={itemVariants}>
-              <MovieRow title={t('home.anime')} movies={anime.items} />
+              <SpotlightGrid
+                title={t('home.anime')}
+                movies={animeSpotlight}
+              />
             </motion.section>
           )}
 
-          {/* TV Shows category */}
+          {/* ── TV Shows — poster cards (MovieRow) ── */}
           {tvShowsCategory?.items && tvShowsCategory.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <MovieRow
@@ -244,17 +326,17 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Vietsub */}
+          {/* ── Vietsub — landscape cards (MovieCarousel) ── */}
           {vietsub?.items && vietsub.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <MovieCarousel
                 title={t('home.vietsub', 'Phim Vietsub')}
                 movies={vietsub.items}
               />
             </motion.section>
           )}
 
-          {/* Thuyết Minh */}
+          {/* ── Thuyết Minh — poster cards (MovieRow) ── */}
           {thuyetMinh?.items && thuyetMinh.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <MovieRow
@@ -264,12 +346,22 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* Lồng Tiếng */}
+          {/* ── Lồng Tiếng — landscape cards (MovieCarousel) ── */}
           {longTieng?.items && longTieng.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <MovieCarousel
                 title={t('home.longTieng', 'Phim Lồng Tiếng')}
                 movies={longTieng.items}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Subteam Picks — poster cards (MovieRow) ── */}
+          {subteamData?.items && subteamData.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <MovieRow
+                title={t('home.subteam', 'Subteam Đề Cử')}
+                movies={subteamData.items}
               />
             </motion.section>
           )}

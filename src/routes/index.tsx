@@ -14,6 +14,7 @@ const MovieDetailPage = React.lazy(() => import('@/pages/MovieDetailPage'));
 const WatchPage = React.lazy(() => import('@/pages/WatchPage'));
 const FavoritesPage = React.lazy(() => import('@/pages/FavoritesPage'));
 const HistoryPage = React.lazy(() => import('@/pages/HistoryPage'));
+const NowPlayingPage = React.lazy(() => import('@/pages/NowPlayingPage'));
 const DonatePage = React.lazy(() => import('@/pages/DonatePage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
 
@@ -29,6 +30,7 @@ export default function AppRoutes() {
               dropdowns only. Deep-linked slug pages are still supported. */}
           <Route path="/the-loai/:slug" element={<GenrePage />} />
           <Route path="/quoc-gia/:slug" element={<CountryPage />} />
+          <Route path="/phim-chieu-rap" element={<NowPlayingPage />} />
           <Route path="/top-rated" element={<TopRatedPage />} />
           <Route path="/tim-kiem" element={<SearchPage />} />
           <Route path="/phim/:slug" element={<MovieDetailPage />} />

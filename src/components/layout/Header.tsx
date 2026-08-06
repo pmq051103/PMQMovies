@@ -75,6 +75,7 @@ const Header: React.FC = () => {
     { label: t("nav.home"), path: ROUTES.HOME },
     { label: t("nav.movies"), path: ROUTES.MOVIES },
     { label: t("nav.tvShows"), path: ROUTES.TV_SHOWS },
+    { label: t("nav.nowPlaying"), path: ROUTES.NOW_PLAYING },
     { label: t("nav.topRated"), path: ROUTES.TOP_RATED },
   ];
 
@@ -392,7 +393,7 @@ const Header: React.FC = () => {
 
               <div className="border-t border-gray-800 px-4 py-4">
                 <div className="flex items-center justify-center gap-4">
-                  <LanguageSwitcher />
+                  <LanguageSwitcher dropUp />
                   <ThemeSwitcher />
                 </div>
               </div>

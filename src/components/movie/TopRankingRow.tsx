@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { FaChevronRight } from "react-icons/fa";
+import { FaChevronRight, FaStar } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
@@ -13,6 +13,8 @@ interface TopRankingRowProps {
   viewAllLink?: string;
   /** How many to show. Defaults to 10 (Netflix Top 10 style). */
   limit?: number;
+  /** Show TMDB star rating badge on each poster. */
+  showRating?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ const TopRankingRow: React.FC<TopRankingRowProps> = ({
   movies,
   viewAllLink,
   limit = 10,
+  showRating = false,
 }) => {
   const { t } = useTranslation();
   const items = movies.slice(0, limit);
@@ -75,6 +78,12 @@ const TopRankingRow: React.FC<TopRankingRowProps> = ({
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/25" />
+                {showRating && (m as any).tmdb?.vote_average > 0 && (
+                  <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-bold text-yellow-400 backdrop-blur-sm">
+                    <FaStar className="h-2.5 w-2.5" />
+                    {Number((m as any).tmdb.vote_average).toFixed(1)}
+                  </span>
+                )}
               </div>
             </div>
 
