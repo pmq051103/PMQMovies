@@ -7,7 +7,7 @@ import { FaFilter, FaTimes, FaSearch } from 'react-icons/fa';
 
 import { MovieGrid, FilterSidebar } from '@/components/movie';
 import { Pagination } from '@/components/common';
-import { useMovies } from '@/hooks';
+import { useMovies, useContextualSearch } from '@/hooks';
 import type { FilterState, FilterParams } from '@/types';
 
 function parseSearchParams(searchParams: URLSearchParams): FilterState {
@@ -58,15 +58,6 @@ const sidebarVariants = {
   exit: { x: '-100%', opacity: 0, transition: { duration: 0.2 } },
 };
 
-/** Strip Vietnamese diacritics for tolerant client-side name matching. */
-function normalizeVN(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/g, 'd');
-}
-
 export default function MoviesPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -78,16 +69,21 @@ export default function MoviesPage() {
   const apiParams = useMemo(() => filtersToApiParams(filters), [filters]);
   const { data, isLoading, isError } = useMovies(apiParams);
 
-  const filteredMovies = useMemo(() => {
-    const items = data?.items ?? [];
-    const q = normalizeVN(inlineSearch.trim());
-    if (!q) return items;
-    return items.filter(
-      (m) =>
-        normalizeVN(m.name).includes(q) ||
-        normalizeVN(m.origin_name || '').includes(q),
-    );
-  }, [data, inlineSearch]);
+  // Full-catalog inline search — restricts results to Phim Lẻ (type=single)
+  // + any active genre / country filter, so what shows up truly belongs
+  // to this page's context.
+  const {
+    active: isSearching,
+    isLoading: isSearchLoading,
+    results: searchResults,
+  } = useContextualSearch(inlineSearch, {
+    type: 'single',
+    categorySlug: filters.genre,
+    countrySlug: filters.country,
+  });
+
+  const displayMovies = isSearching ? searchResults : (data?.items ?? []);
+  const displayLoading = isSearching ? isSearchLoading : isLoading;
 
   const handleFilterChange = useCallback(
     (newFilters: FilterState) => {
@@ -219,15 +215,15 @@ export default function MoviesPage() {
                 </div>
               ) : (
                 <>
-                  {filteredMovies.length === 0 && inlineSearch ? (
+                  {displayMovies.length === 0 && isSearching ? (
                     <p className="py-16 text-center text-gray-500">
                       {t('search.noResults')}
                     </p>
                   ) : (
-                    <MovieGrid movies={filteredMovies} isLoading={isLoading} />
+                    <MovieGrid movies={displayMovies} isLoading={displayLoading} />
                   )}
 
-                  {!inlineSearch && data?.pagination && (
+                  {!isSearching && data?.pagination && (
                     <Pagination
                       currentPage={data.pagination.currentPage}
                       totalPages={data.pagination.totalPages}

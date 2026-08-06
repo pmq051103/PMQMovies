@@ -7,7 +7,12 @@ import { FaFilm, FaTheaterMasks, FaSearch, FaTimes } from 'react-icons/fa';
 
 import { MovieGrid } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
-import { useGenres, useMoviesInGenre, useMoviesBySlug } from '@/hooks';
+import {
+  useGenres,
+  useMoviesInGenre,
+  useMoviesBySlug,
+  useContextualSearch,
+} from '@/hooks';
 import { ROUTES } from '@/constants';
 
 const GRADIENT_PALETTES = [
@@ -116,15 +121,6 @@ const TYPE_TABS: { value: MovieTypeTab; labelKey: string }[] = [
   { value: 'series', labelKey: 'nav.tvShows' },
 ];
 
-/** Normalise VN text for tolerant client-side name matching. */
-function normalizeVN(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/g, 'd');
-}
-
 function GenreDetailView({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -150,23 +146,37 @@ function GenreDetailView({ slug }: { slug: string }) {
   const { data, isLoading } =
     activeType === 'all' ? allQuery : typedQuery;
 
+  // Contextual inline search: hits phimapi's search endpoint then
+  // client-filters by the current genre (and, if applicable, the type
+  // tab). Guarantees users can find any matching title, not just those
+  // in the currently-loaded page.
+  const searchCtx = useMemo(
+    () => ({
+      categorySlug: slug,
+      type:
+        activeType === 'single'
+          ? 'single'
+          : activeType === 'series'
+            ? 'series'
+            : undefined,
+    }),
+    [slug, activeType],
+  );
+  const {
+    active: isSearching,
+    isLoading: isSearchLoading,
+    results: searchResults,
+  } = useContextualSearch(inlineSearch, searchCtx);
+
   const genreName = useMemo(() => {
     const found = genres.find((g) => g.slug === slug);
     return found?.name ?? slug;
   }, [genres, slug]);
 
-  // Client-side inline filter across the current page of results.
-  // Matches VN with diacritics stripped, so gõ "hanh dong" → "Hành Động".
-  const filteredMovies = useMemo(() => {
-    const items = data?.items ?? [];
-    const q = normalizeVN(inlineSearch.trim());
-    if (!q) return items;
-    return items.filter(
-      (m) =>
-        normalizeVN(m.name).includes(q) ||
-        normalizeVN(m.origin_name || '').includes(q),
-    );
-  }, [data, inlineSearch]);
+  // Display list: search mode → results from contextual search;
+  // browsing mode → current page of the paginated listing.
+  const displayMovies = isSearching ? searchResults : (data?.items ?? []);
+  const displayLoading = isSearching ? isSearchLoading : isLoading;
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -245,17 +255,17 @@ function GenreDetailView({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {isLoading ? (
+      {displayLoading ? (
         <GridSkeleton />
-      ) : filteredMovies.length === 0 && inlineSearch ? (
+      ) : displayMovies.length === 0 && isSearching ? (
         <p className="py-16 text-center text-gray-500">
           {t('search.noResults')}
         </p>
       ) : (
-        <MovieGrid movies={filteredMovies} />
+        <MovieGrid movies={displayMovies} />
       )}
 
-      {!inlineSearch && data?.pagination && data.pagination.totalPages > 1 && (
+      {!isSearching && data?.pagination && data.pagination.totalPages > 1 && (
         <Pagination
           currentPage={data.pagination.currentPage}
           totalPages={data.pagination.totalPages}

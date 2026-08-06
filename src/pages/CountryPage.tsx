@@ -7,7 +7,12 @@ import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope, FaSearch, FaTimes } from '
 
 import { MovieGrid } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
-import { useCountries, useMoviesInCountry, useMoviesBySlug } from '@/hooks';
+import {
+  useCountries,
+  useMoviesInCountry,
+  useMoviesBySlug,
+  useContextualSearch,
+} from '@/hooks';
 import { ROUTES } from '@/constants';
 
 const GRADIENT_PALETTES = [
@@ -113,15 +118,6 @@ const COUNTRY_TYPE_TABS: { value: CountryTypeTab; labelKey: string }[] = [
   { value: 'series', labelKey: 'nav.tvShows' },
 ];
 
-/** Diacritic-tolerant Vietnamese matcher for client-side inline search. */
-function normalizeVN(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/g, 'd');
-}
-
 function CountryDetailView({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -153,16 +149,27 @@ function CountryDetailView({ slug }: { slug: string }) {
     return found?.name ?? slug;
   }, [countries, slug]);
 
-  const filteredMovies = useMemo(() => {
-    const items = data?.items ?? [];
-    const q = normalizeVN(inlineSearch.trim());
-    if (!q) return items;
-    return items.filter(
-      (m) =>
-        normalizeVN(m.name).includes(q) ||
-        normalizeVN(m.origin_name || '').includes(q),
-    );
-  }, [data, inlineSearch]);
+  // Full-catalog search restricted to this country (+ type tab if set).
+  const searchCtx = useMemo(
+    () => ({
+      countrySlug: slug,
+      type:
+        activeType === 'single'
+          ? 'single'
+          : activeType === 'series'
+            ? 'series'
+            : undefined,
+    }),
+    [slug, activeType],
+  );
+  const {
+    active: isSearching,
+    isLoading: isSearchLoading,
+    results: searchResults,
+  } = useContextualSearch(inlineSearch, searchCtx);
+
+  const displayMovies = isSearching ? searchResults : (data?.items ?? []);
+  const displayLoading = isSearching ? isSearchLoading : isLoading;
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -235,17 +242,17 @@ function CountryDetailView({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {isLoading ? (
+      {displayLoading ? (
         <GridSkeleton />
-      ) : filteredMovies.length === 0 && inlineSearch ? (
+      ) : displayMovies.length === 0 && isSearching ? (
         <p className="py-16 text-center text-gray-500">
           {t('search.noResults')}
         </p>
       ) : (
-        <MovieGrid movies={filteredMovies} />
+        <MovieGrid movies={displayMovies} />
       )}
 
-      {!inlineSearch && data?.pagination && data.pagination.totalPages > 1 && (
+      {!isSearching && data?.pagination && data.pagination.totalPages > 1 && (
         <Pagination
           currentPage={data.pagination.currentPage}
           totalPages={data.pagination.totalPages}

@@ -18,6 +18,9 @@ export {
 // React Query hooks (latest movies, movie detail, search, genres, countries, etc.)
 export * from './useMovieQueries';
 
+// Contextual inline-search hook for filtered listing pages.
+export { useContextualSearch, type ContextFilter } from './useContextualSearch';
+
 /* ------------------------------------------------------------------ */
 /* useClickOutside                                                     */
 /* ------------------------------------------------------------------ */

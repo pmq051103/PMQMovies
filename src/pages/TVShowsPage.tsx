@@ -7,7 +7,7 @@ import { FaFilter, FaTimes, FaSearch } from 'react-icons/fa';
 
 import { MovieGrid, FilterSidebar } from '@/components/movie';
 import { Pagination } from '@/components/common';
-import { useTVShows } from '@/hooks';
+import { useTVShows, useContextualSearch } from '@/hooks';
 import type { FilterState, FilterParams } from '@/types';
 
 function parseSearchParams(searchParams: URLSearchParams): FilterState {
@@ -57,14 +57,6 @@ const sidebarVariants = {
   exit: { x: '-100%', opacity: 0, transition: { duration: 0.2 } },
 };
 
-function normalizeVN(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/g, 'd');
-}
-
 export default function TVShowsPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -76,16 +68,18 @@ export default function TVShowsPage() {
   const apiParams = useMemo(() => filtersToApiParams(filters), [filters]);
   const { data, isLoading, isError } = useTVShows(apiParams);
 
-  const filteredMovies = useMemo(() => {
-    const items = data?.items ?? [];
-    const q = normalizeVN(inlineSearch.trim());
-    if (!q) return items;
-    return items.filter(
-      (m) =>
-        normalizeVN(m.name).includes(q) ||
-        normalizeVN(m.origin_name || '').includes(q),
-    );
-  }, [data, inlineSearch]);
+  const {
+    active: isSearching,
+    isLoading: isSearchLoading,
+    results: searchResults,
+  } = useContextualSearch(inlineSearch, {
+    type: 'series',
+    categorySlug: filters.genre,
+    countrySlug: filters.country,
+  });
+
+  const displayMovies = isSearching ? searchResults : (data?.items ?? []);
+  const displayLoading = isSearching ? isSearchLoading : isLoading;
 
   const handleFilterChange = useCallback(
     (newFilters: FilterState) => {
@@ -216,15 +210,15 @@ export default function TVShowsPage() {
                 </div>
               ) : (
                 <>
-                  {filteredMovies.length === 0 && inlineSearch ? (
+                  {displayMovies.length === 0 && isSearching ? (
                     <p className="py-16 text-center text-gray-500">
                       {t('search.noResults')}
                     </p>
                   ) : (
-                    <MovieGrid movies={filteredMovies} isLoading={isLoading} />
+                    <MovieGrid movies={displayMovies} isLoading={displayLoading} />
                   )}
 
-                  {!inlineSearch && data?.pagination && (
+                  {!isSearching && data?.pagination && (
                     <Pagination
                       currentPage={data.pagination.currentPage}
                       totalPages={data.pagination.totalPages}
