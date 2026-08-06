@@ -248,6 +248,40 @@ export default function WatchPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goToPrev, goToNext, cinemaMode, setCinemaMode]);
 
+  /* ---- Auto-next: listen for postMessage from the video iframe ----
+     The upstream player broadcasts events on video end using several
+     possible shapes (`ended`, `video:ended`, {type:'ended'}, ...). We
+     accept any that carry a sane signal so we don't miss the trigger. */
+  useEffect(() => {
+    if (!autoNext) return;
+
+    const isEndedSignal = (data: unknown): boolean => {
+      if (typeof data === 'string') {
+        return /ended|end|complete|finished/i.test(data);
+      }
+      if (data && typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+        const flat = JSON.stringify(d).toLowerCase();
+        if (/ended|"finish"|complete/.test(flat)) return true;
+        if (d.type && typeof d.type === 'string') {
+          return /end|finish|complete/i.test(d.type);
+        }
+        if (d.event && typeof d.event === 'string') {
+          return /end|finish|complete/i.test(d.event);
+        }
+      }
+      return false;
+    };
+
+    const handler = (e: MessageEvent) => {
+      if (isEndedSignal(e.data)) {
+        if (hasNextEpisode) goToNext();
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [autoNext, hasNextEpisode, goToNext]);
+
   /* ---- Loading / error states ---- */
   if (isLoading) {
     return (
@@ -291,16 +325,34 @@ export default function WatchPage() {
         <meta property="og:image" content={getImageUrl(movie.thumb_url)} />
       </Helmet>
 
-      {/* Cinema mode overlay */}
+      {/* Cinema mode backdrop — full-viewport dark surface. Clicking it
+          exits cinema mode. Sits BEHIND the player (z-40) so the player
+          (z-50) sits on top and appears "enlarged". */}
       <AnimatePresence>
         {cinemaMode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/90"
+            className="fixed inset-0 z-40 bg-black"
             onClick={() => setCinemaMode(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Small "exit cinema mode" pill that floats top-right in cinema mode */}
+      <AnimatePresence>
+        {cinemaMode && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            onClick={() => setCinemaMode(false)}
+            className="fixed right-4 top-4 z-[70] rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
+          >
+            {t('watch.exitCinema', 'Thoát rạp')}  (Esc)
+          </motion.button>
         )}
       </AnimatePresence>
 
@@ -315,13 +367,28 @@ export default function WatchPage() {
           <div className="flex flex-col gap-6 lg:flex-row">
             {/* Left column: player + controls */}
             <div className="flex-1">
-              {/* Player */}
+              {/* Player — when cinema mode is on, elevate to fixed
+                  full-viewport (rạp thật sự phóng to). When off, sits
+                  inline in the normal 16:9 responsive slot. */}
               <div
-                className={`relative overflow-hidden rounded-xl bg-black ${
-                  cinemaMode ? 'relative z-50' : ''
-                }`}
+                className={
+                  cinemaMode
+                    ? 'fixed inset-0 z-50 flex items-center justify-center bg-black'
+                    : 'relative overflow-hidden rounded-xl bg-black'
+                }
               >
-                <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                <div
+                  className={
+                    cinemaMode
+                      ? 'relative w-full max-w-[100vw]'
+                      : 'relative w-full'
+                  }
+                  style={
+                    cinemaMode
+                      ? { aspectRatio: '16 / 9', maxHeight: '100vh' }
+                      : { paddingTop: '56.25%' }
+                  }
+                >
                   {embedUrl ? (
                     <iframe
                       ref={iframeRef}

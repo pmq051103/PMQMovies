@@ -99,7 +99,8 @@
     "resume": "Resume",
     "resumePrompt": "Would you like to resume from where you left off?",
     "watchNow": "Watch Now",
-    "youMightLike": "You might also like"
+    "youMightLike": "You might also like",
+    "exitCinema": "Exit cinema"
   },
   "player": {
     "selectServer": "Select Server",

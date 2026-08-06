@@ -99,7 +99,8 @@
     "resume": "Tiếp Tục",
     "resumePrompt": "Bạn muốn tiếp tục xem từ vị trí trước đó?",
     "watchNow": "Xem Phim",
-    "youMightLike": "Bạn cũng có thể thích"
+    "youMightLike": "Bạn cũng có thể thích",
+    "exitCinema": "Thoát rạp"
   },
   "player": {
     "selectServer": "Chọn Máy Chủ",

@@ -122,14 +122,13 @@ const EpisodeList: React.FC<EpisodeListProps> = ({
           ) : (
             currentServer.server_data.map((serverData, idx) => {
               const isActive = currentEpisodeSlug === serverData.slug;
-              // Prefer a compact numeric label ("1", "12") when the API label
-              // is a long "Tập X" string, so buttons never overflow.
-              const numericMatch = serverData.name.match(/\d+/);
-              const shortLabel = numericMatch
-                ? numericMatch[0]
-                : serverData.name.length <= 6
-                  ? serverData.name
-                  : String(idx + 1);
+              // Label the button by its position (idx + 1) so the visible
+              // numbers always match the total-episode count. Some upstream
+              // data has stray non-numeric or repeated labels, which used
+              // to make "1184 tập" appear alongside a last button of
+              // "1172" — sequential numbering keeps them consistent.
+              // The full name still shows in the browser tooltip.
+              const shortLabel = String(idx + 1);
               return (
                 <button
                   key={serverData.slug}

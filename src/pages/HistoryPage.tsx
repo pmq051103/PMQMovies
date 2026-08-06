@@ -99,7 +99,7 @@ export default function HistoryPage() {
                     className="group relative flex items-center gap-4 rounded-xl bg-zinc-900/60 p-3 transition-all duration-300 hover:bg-zinc-800/80 md:p-4"
                   >
                     <Link
-                      to={`/xem/${item.slug}?tap=${item.episode}`}
+                      to={`/xem/${item.slug}?tap=${item.episode}${item.server ? `&sv=${encodeURIComponent(item.server)}` : ''}`}
                       className="relative h-20 w-14 flex-shrink-0 overflow-hidden rounded-lg md:h-28 md:w-20"
                     >
                       <img
@@ -115,7 +115,7 @@ export default function HistoryPage() {
 
                     <div className="flex flex-1 flex-col gap-2">
                       <Link
-                        to={`/xem/${item.slug}?tap=${item.episode}`}
+                        to={`/xem/${item.slug}?tap=${item.episode}${item.server ? `&sv=${encodeURIComponent(item.server)}` : ''}`}
                         className="text-base font-semibold text-white transition-colors hover:text-red-500 md:text-lg"
                       >
                         {item.name}
@@ -139,7 +139,7 @@ export default function HistoryPage() {
                       </div>
 
                       <Link
-                        to={`/xem/${item.slug}?tap=${item.episode}`}
+                        to={`/xem/${item.slug}?tap=${item.episode}${item.server ? `&sv=${encodeURIComponent(item.server)}` : ''}`}
                         className="mt-1 inline-flex w-fit items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700"
                       >
                         <FaPlay className="text-[10px]" />
