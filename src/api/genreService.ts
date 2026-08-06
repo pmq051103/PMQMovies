@@ -29,8 +29,23 @@ function isAdultGenre(g: Genre): boolean {
 }
 
 /**
- * Fetch the full list of genres, minus adult categories. Supports every
- * known upstream response shape:
+ * Synthetic "genres" — on phimapi.com these are actually MOVIE TYPES
+ * (`/danh-sach/hoat-hinh`, `/danh-sach/tv-shows`), not categories. But
+ * users think of them as browsable genres alongside Hành Động, Bí Ẩn…,
+ * so we surface them in the same dropdown for a familiar UX. GenrePage
+ * recognises these slugs and routes to the correct listing endpoint.
+ */
+const SYNTHETIC_GENRES: Genre[] = [
+  { _id: 900001, name: 'Hoạt Hình', slug: 'hoat-hinh' },
+  { _id: 900002, name: 'TV Shows', slug: 'tv-shows' },
+];
+
+export const SYNTHETIC_GENRE_SLUGS = new Set(SYNTHETIC_GENRES.map((g) => g.slug));
+
+/**
+ * Fetch the full list of genres, minus adult categories, PLUS synthetic
+ * entries for Hoạt Hình + TV Shows so the browse UX matches user
+ * expectations. Supports every known upstream response shape:
  *   - phimapi.com: `{ status, message, data: { items } }`
  *   - vsmov.com:   `{ status, message, data: { items } }`
  *   - ophim-like:  `{ status, items }`
@@ -41,7 +56,9 @@ export async function getAllGenres(): Promise<GenreListResponse> {
   const rawItems: Genre[] = Array.isArray(res)
     ? res
     : (res.data?.items ?? res.items ?? []);
-  return { status: true, items: rawItems.filter((g) => !isAdultGenre(g)) };
+  const clean = rawItems.filter((g) => !isAdultGenre(g));
+  // Insert synthetic entries at the top so users spot them first.
+  return { status: true, items: [...SYNTHETIC_GENRES, ...clean] };
 }
 
 /**

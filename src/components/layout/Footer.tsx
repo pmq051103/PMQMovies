@@ -5,10 +5,10 @@ import {
   FaEnvelope,
   FaPhone,
   FaHeart,
-  FaCommentDots,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import Logo from "@/components/common/Logo";
+import ZaloIcon from "@/components/common/icons/ZaloIcon";
 import { ROUTES } from "@/constants";
 
 interface FooterLink {
@@ -40,7 +40,7 @@ const socialLinks = [
     hoverBg: "hover:bg-black",
   },
   {
-    icon: FaCommentDots,
+    icon: ZaloIcon,
     href: "https://zalo.me/0346991600",
     label: "Zalo",
     hoverBg: "hover:bg-[#0068ff]",

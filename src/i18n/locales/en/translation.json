@@ -81,7 +81,13 @@
     "imdbRating": "IMDb Rating",
     "studios": "Studios",
     "originalTitle": "Original Title",
-    "singleMovieNote": "Standalone movie — no episode list, you are watching the full film."
+    "singleMovieNote": "Standalone movie — no episode list, you are watching the full film.",
+    "type": {
+      "single": "Movie",
+      "series": "Series",
+      "hoathinh": "Anime",
+      "tvshows": "TV Shows"
+    }
   },
   "watch": {
     "server": "Server",
@@ -162,7 +168,8 @@
     "tvShows": "TV Shows",
     "sortModified": "Recently Updated",
     "sortId": "Default",
-    "type": "Type"
+    "type": "Type",
+    "searchInResults": "Search in list..."
   },
   "common": {
     "loading": "Loading...",

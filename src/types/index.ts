@@ -283,6 +283,8 @@ export interface FilterState {
   quality?: string;
   language?: string;
   status?: MovieStatus | string;
+  /** Optional movie-type override (single / series / hoathinh / tvshows). */
+  type?: MovieType | string;
   sortField?: string;
   sortType?: "asc" | "desc";
   page?: number;

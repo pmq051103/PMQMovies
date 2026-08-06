@@ -41,6 +41,7 @@ function filtersToApiParams(filters: FilterState): FilterParams {
     country: filters.country,
     year: filters.year,
     status: filters.status,
+    type: filters.type,
     sort_field: filters.sortField,
     sort_type: filters.sortType,
   };

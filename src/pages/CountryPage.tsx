@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope } from 'react-icons/fa';
+import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope, FaSearch, FaTimes } from 'react-icons/fa';
 
 import { MovieGrid } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
@@ -114,10 +114,20 @@ const COUNTRY_TYPE_TABS: { value: CountryTypeTab; labelKey: string }[] = [
   { value: 'series', labelKey: 'nav.tvShows' },
 ];
 
+/** Diacritic-tolerant Vietnamese matcher for client-side inline search. */
+function normalizeVN(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd');
+}
+
 function CountryDetailView({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
+  const [inlineSearch, setInlineSearch] = useState('');
   const { data: countries = [] } = useCountries();
 
   const activeType: CountryTypeTab =
@@ -132,6 +142,17 @@ function CountryDetailView({ slug }: { slug: string }) {
     const found = countries.find((c) => c.slug === slug);
     return found?.name ?? slug;
   }, [countries, slug]);
+
+  const filteredMovies = useMemo(() => {
+    const items = data?.items ?? [];
+    const q = normalizeVN(inlineSearch.trim());
+    if (!q) return items;
+    return items.filter(
+      (m) =>
+        normalizeVN(m.name).includes(q) ||
+        normalizeVN(m.origin_name || '').includes(q),
+    );
+  }, [data, inlineSearch]);
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -163,30 +184,58 @@ function CountryDetailView({ slug }: { slug: string }) {
         </span>
       </div>
 
-      <div className="mb-6 inline-flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
-        {COUNTRY_TYPE_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => handleTypeChange(tab.value)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-              activeType === tab.value
-                ? 'bg-red-600 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {t(tab.labelKey)}
-          </button>
-        ))}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
+          {COUNTRY_TYPE_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => handleTypeChange(tab.value)}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                activeType === tab.value
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {t(tab.labelKey)}
+            </button>
+          ))}
+        </div>
+
+        {/* Inline search within the filtered country list */}
+        <div className="relative w-full sm:max-w-xs">
+          <FaSearch className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
+          <input
+            type="text"
+            value={inlineSearch}
+            onChange={(e) => setInlineSearch(e.target.value)}
+            placeholder={t('filter.searchInResults', 'Tìm trong danh sách...')}
+            className="w-full rounded-lg border border-gray-800 bg-gray-900 py-2 pl-9 pr-9 text-sm text-gray-100 outline-none placeholder:text-gray-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+          />
+          {inlineSearch && (
+            <button
+              type="button"
+              onClick={() => setInlineSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-500 hover:text-white"
+              aria-label={t('search.clear')}
+            >
+              <FaTimes className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
         <GridSkeleton />
+      ) : filteredMovies.length === 0 && inlineSearch ? (
+        <p className="py-16 text-center text-gray-500">
+          {t('search.noResults')}
+        </p>
       ) : (
-        <MovieGrid movies={data?.items ?? []} />
+        <MovieGrid movies={filteredMovies} />
       )}
 
-      {data?.pagination && data.pagination.totalPages > 1 && (
+      {!inlineSearch && data?.pagination && data.pagination.totalPages > 1 && (
         <Pagination
           currentPage={data.pagination.currentPage}
           totalPages={data.pagination.totalPages}

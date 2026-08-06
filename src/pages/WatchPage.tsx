@@ -42,7 +42,9 @@ function resolveIndices(
   let episodeIndex = 0;
 
   if (svParam) {
-    const idx = episodes.findIndex((ep) => ep.server_name === svParam);
+    const idx = episodes.findIndex(
+      (ep) => ep.server_name === svParam,
+    );
     if (idx !== -1) serverIndex = idx;
   }
 
@@ -351,7 +353,9 @@ export default function WatchPage() {
                     <p className="flex-1 text-sm text-gray-200">
                       {t('watch.resumePrompt')}
                     </p>
-                    <button className="shrink-0 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700">
+                    <button
+                      className="shrink-0 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                    >
                       {t('watch.resume')}
                     </button>
                   </motion.div>
@@ -399,6 +403,7 @@ export default function WatchPage() {
 
               {/* Player controls bar */}
               <div className="mt-4 flex flex-wrap items-center gap-3">
+                {/* Prev / Next buttons */}
                 <button
                   onClick={goToPrev}
                   disabled={!hasPrevEpisode}
@@ -418,6 +423,7 @@ export default function WatchPage() {
                 </button>
 
                 <div className="ml-auto flex items-center gap-4">
+                  {/* Auto next toggle */}
                   <button
                     onClick={() => setAutoNext(!autoNext)}
                     className="inline-flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-white"
@@ -430,6 +436,7 @@ export default function WatchPage() {
                     {t('watch.autoNext')}
                   </button>
 
+                  {/* Cinema mode toggle */}
                   <button
                     onClick={() => setCinemaMode(!cinemaMode)}
                     className="inline-flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-white"
@@ -469,7 +476,10 @@ export default function WatchPage() {
                 </div>
               )}
 
-              {/* Episode list on mobile (single-ep → note, otherwise full) */}
+              {/* Episode list — only show when the movie has real episodes.
+                  Single-"Full" phim lẻ hides the sidebar entirely to avoid a
+                  meaningless "Xem Phim" button on a page you're already
+                  watching. Instead, show a subtle single-episode notice. */}
               {(() => {
                 const hasMultipleEpisodes =
                   episodes.length > 1 ||
@@ -478,7 +488,7 @@ export default function WatchPage() {
                 if (!hasMultipleEpisodes) {
                   return (
                     <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3 text-sm text-gray-400 lg:hidden">
-                      {t('movie.singleMovieNote')}
+                      {t("movie.singleMovieNote")}
                     </div>
                   );
                 }

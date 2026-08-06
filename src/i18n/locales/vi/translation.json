@@ -81,7 +81,13 @@
     "imdbRating": "Đánh Giá IMDb",
     "studios": "Nhà Sản Xuất",
     "originalTitle": "Tên Gốc",
-    "singleMovieNote": "Phim lẻ — không có danh sách tập, bạn đang xem toàn bộ phim."
+    "singleMovieNote": "Phim lẻ — không có danh sách tập, bạn đang xem toàn bộ phim.",
+    "type": {
+      "single": "Phim Lẻ",
+      "series": "Phim Bộ",
+      "hoathinh": "Hoạt Hình",
+      "tvshows": "TV Shows"
+    }
   },
   "watch": {
     "server": "Máy Chủ",
@@ -162,7 +168,8 @@
     "tvShows": "TV Shows",
     "sortModified": "Mới Cập Nhật",
     "sortId": "Mặc Định",
-    "type": "Loại Phim"
+    "type": "Loại Phim",
+    "searchInResults": "Tìm trong danh sách..."
   },
   "common": {
     "loading": "Đang tải...",
