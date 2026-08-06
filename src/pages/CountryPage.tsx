@@ -7,9 +7,8 @@ import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope, FaSearch, FaTimes } from '
 
 import { MovieGrid } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
-import { useCountries, useMoviesInCountry } from '@/hooks';
+import { useCountries, useMoviesInCountry, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
-import type { MovieType } from '@/types';
 
 const GRADIENT_PALETTES = [
   'from-blue-700 to-red-700',
@@ -133,10 +132,21 @@ function CountryDetailView({ slug }: { slug: string }) {
   const activeType: CountryTypeTab =
     (searchParams.get('type') as CountryTypeTab) || 'all';
 
-  const { data, isLoading } = useMoviesInCountry(slug, {
+  // phimapi's /v1/api/quoc-gia/[slug]?type= ignores the type param. Use
+  // /v1/api/danh-sach/phim-le|phim-bo?country=[slug] instead when the
+  // user narrows to Phim Lẻ or Phim Bộ — that endpoint DOES filter.
+  const allQuery = useMoviesInCountry(activeType === 'all' ? slug : undefined, {
     page,
-    type: activeType === 'all' ? undefined : (activeType as MovieType),
   });
+  const typedQuery = useMoviesBySlug(
+    activeType === 'all'
+      ? undefined
+      : `phim-${activeType === 'single' ? 'le' : 'bo'}`,
+    { page, country: slug },
+  );
+
+  const { data, isLoading } =
+    activeType === 'all' ? allQuery : typedQuery;
 
   const countryName = useMemo(() => {
     const found = countries.find((c) => c.slug === slug);

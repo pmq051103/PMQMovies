@@ -9,7 +9,6 @@ import { MovieGrid } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
 import { useGenres, useMoviesInGenre, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
-import type { MovieType } from '@/types';
 
 const GRADIENT_PALETTES = [
   'from-rose-600 to-pink-800',
@@ -126,9 +125,6 @@ function normalizeVN(s: string): string {
     .replace(/đ/g, 'd');
 }
 
-/** Synthetic slugs — treated as movie-type lists, not real genre lists. */
-const SYNTHETIC_SLUGS = new Set(['hoat-hinh', 'tv-shows']);
-
 function GenreDetailView({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -139,21 +135,20 @@ function GenreDetailView({ slug }: { slug: string }) {
   const activeType: MovieTypeTab =
     (searchParams.get('type') as MovieTypeTab) || 'all';
 
-  const isSynthetic = SYNTHETIC_SLUGS.has(slug);
-
-  // Real genre → /v1/api/the-loai/[slug]?type=…
-  const realGenreQuery = useMoviesInGenre(
-    !isSynthetic ? slug : undefined,
-    { page, type: activeType === 'all' ? undefined : (activeType as MovieType) },
+  // phimapi's /v1/api/the-loai/[slug]?type= IGNORES the type param. To
+  // actually honour "Phim Lẻ" / "Phim Bộ" we must hit the flipped
+  // endpoint /v1/api/danh-sach/[phim-le|phim-bo]?category=[genre],
+  // which DOES respect the category param.
+  const allQuery = useMoviesInGenre(activeType === 'all' ? slug : undefined, {
+    page,
+  });
+  const typedQuery = useMoviesBySlug(
+    activeType === 'all' ? undefined : `phim-${activeType === 'single' ? 'le' : 'bo'}`,
+    { page, category: slug },
   );
 
-  // Synthetic (Hoạt Hình / TV Shows) → /v1/api/danh-sach/[slug]
-  const syntheticQuery = useMoviesBySlug(
-    isSynthetic ? slug : undefined,
-    { page },
-  );
-
-  const { data, isLoading } = isSynthetic ? syntheticQuery : realGenreQuery;
+  const { data, isLoading } =
+    activeType === 'all' ? allQuery : typedQuery;
 
   const genreName = useMemo(() => {
     const found = genres.find((g) => g.slug === slug);
@@ -207,26 +202,22 @@ function GenreDetailView({ slug }: { slug: string }) {
           Type tabs hidden for synthetic slugs (Hoạt Hình / TV Shows) where
           the "type" filter isn't meaningful — the whole list IS one type. */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {!isSynthetic ? (
-          <div className="inline-flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
-            {TYPE_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => handleTypeChange(tab.value)}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                  activeType === tab.value
-                    ? 'bg-red-600 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {t(tab.labelKey)}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span />
-        )}
+        <div className="inline-flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
+          {TYPE_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => handleTypeChange(tab.value)}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                activeType === tab.value
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {t(tab.labelKey)}
+            </button>
+          ))}
+        </div>
 
         {/* Inline search — filters items in the current page client-side */}
         <div className="relative w-full sm:max-w-xs">
