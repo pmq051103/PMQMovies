@@ -69,12 +69,12 @@ export default function WelcomeTip() {
             </div>
 
             <h3 className="mb-2 text-xl font-bold text-white">
-              {t('welcome.title', '👋 Mẹo nhỏ cho bạn')}
+              {t('welcome.title', 'Mẹo nhỏ cho bạn')}
             </h3>
             <p className="text-sm leading-relaxed text-gray-300">
               {t(
                 'welcome.body',
-                'PMQMovies gộp phim từ 2 nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng',
+                'PMQMovies gộp phim từ nhiều nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng',
               )}{' '}
               <span className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
                 <FaSearch className="h-2.5 w-2.5" />
@@ -82,7 +82,7 @@ export default function WelcomeTip() {
               </span>{' '}
               {t(
                 'welcome.bodyTail',
-                'ở góc trên phải — chúng tôi sẽ tìm ở cả 2 kho phim để trả kết quả tốt nhất.',
+                'ở góc trên phải — chúng tôi sẽ tìm ở cả nhiều kho phim để trả kết quả tốt nhất.',
               )}
             </p>
 

@@ -12,6 +12,7 @@
 
 import { apiGet } from './axiosClient';
 import { vsmovGet } from './vsmovClient';
+import { rankAndMerge } from '@/utils/searchRank';
 import type {
   APIListResponse,
   MovieDetailResponse,
@@ -105,24 +106,44 @@ export async function searchMoviesDual(
   const trimmed = keyword.trim();
   if (!trimmed) return { status: true, items: [] };
 
-  const [primary, secondary] = await Promise.all([
+  // Ask each API for generous results so the ranker has room to
+  // promote the best matches from either source. phimapi caps at 64
+  // items per page, so for larger requests we also fetch page 2.
+  const fetchLimit = Math.max(limit * 2, 64);
+  const needPage2 = fetchLimit > 64;
+
+  const [primary, primaryP2, secondary] = await Promise.all([
     safe(
       apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
-        params: { keyword: trimmed, limit },
+        params: { keyword: trimmed, limit: fetchLimit },
       }),
     ),
+    needPage2
+      ? safe(
+          apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
+            params: { keyword: trimmed, limit: fetchLimit, page: 2 },
+          }),
+        )
+      : Promise.resolve(null),
     safe(
       vsmovGet<APIListResponse<MovieListItem>>('/tim-kiem', {
-        params: { keyword: trimmed, limit },
+        params: { keyword: trimmed, limit: fetchLimit },
       }),
     ),
   ]);
 
-  const primaryItems = extractItems(primary);
+  const primaryItems = [
+    ...extractItems(primary),
+    ...extractItems(primaryP2),
+  ];
   const secondaryItems = extractItems(secondary);
-  const merged = dedupeBySlug([...primaryItems, ...secondaryItems]);
 
-  return { status: true, items: merged };
+  // Rank by relevance instead of naively concatenating — ensures exact
+  // matches from either source surface first and vsmov results aren't
+  // buried behind loosely-matching phimapi results.
+  const ranked = rankAndMerge(primaryItems, secondaryItems, trimmed, limit);
+
+  return { status: true, items: ranked };
 }
 
 /* ------------------------------------------------------------------ */
@@ -154,17 +175,41 @@ function mergeEpisodes(
   return out;
 }
 
+/**
+ * Fetch movie detail from both sources and merge episode servers.
+ *
+ * @param slug    Movie slug (URL identifier).
+ * @param prefer  Optional source hint — when a search result carries
+ *                `_source`, pass it here so the detail page loads the
+ *                *same* movie the user clicked (avoids slug collisions
+ *                where phimapi and vsmov map the same slug to different
+ *                films).
+ */
 export async function getMovieDetailDual(
   slug: string,
+  prefer?: 'phimapi' | 'vsmov',
 ): Promise<MovieDetailResponse> {
   const [primary, secondary] = await Promise.all([
     safe(apiGet<MovieDetailResponse>(`/phim/${slug}`)),
     safe(vsmovGet<MovieDetailResponse>(`/phim/${slug}`)),
   ]);
 
-  // If phimapi has the movie, use its metadata but merge in vsmov's
-  // episode servers (extra playback sources).
-  if (primary?.movie) {
+  const hasPrimary = !!primary?.movie;
+  const hasSecondary = !!secondary?.movie;
+
+  // When the caller explicitly prefers vsmov (the search result came
+  // from there) AND vsmov actually has the movie, lead with vsmov's
+  // metadata so the user sees the same film they clicked.
+  if (prefer === 'vsmov' && hasSecondary) {
+    const mergedEpisodes = mergeEpisodes(
+      secondary.episodes,
+      primary?.episodes,
+    );
+    return { ...secondary, episodes: mergedEpisodes };
+  }
+
+  // Default path: phimapi primary, merge vsmov episode servers.
+  if (hasPrimary) {
     const mergedEpisodes = mergeEpisodes(
       primary.episodes,
       secondary?.episodes,
@@ -173,7 +218,7 @@ export async function getMovieDetailDual(
   }
 
   // phimapi 404 → use vsmov if it has it.
-  if (secondary?.movie) return secondary;
+  if (hasSecondary) return secondary;
 
   // Both failed — propagate primary's shape so the UI can show error.
   throw new Error('Movie not found on either source');

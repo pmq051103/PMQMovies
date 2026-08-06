@@ -52,6 +52,7 @@ export default function SearchPage() {
   /* ---- Fetch results ---- */
   const { data, isLoading } = useSearchMovies({
     keyword: debouncedKeyword,
+    limit: 64,
   });
 
   const movies = data?.items ?? [];

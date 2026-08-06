@@ -288,8 +288,8 @@
     "countriesTitle": "Movies by Country"
   },
   "welcome": {
-    "title": "👋 Quick tip",
-    "body": "PMQMovies pulls titles from 2 sources — if you can't find your movie in the catalog, use the",
+    "title": "Quick tip",
+    "body": "PMQMovies pulls titles from multiple sources — if you can't find your movie in the catalog, use the",
     "searchBtn": "Search",
     "bodyTail": "icon in the top-right; we'll query both catalogs to give you the best match.",
     "gotIt": "Got it, thanks!"

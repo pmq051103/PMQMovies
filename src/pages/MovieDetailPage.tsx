@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -37,8 +37,17 @@ export default function MovieDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
 
-  const { data, isLoading, isError, refetch } = useMovieDetail(slug);
+  // When a search result carries _source info, the MovieCard appends
+  // ?src=vsmov so the detail page loads the correct movie even when
+  // both APIs map the same slug to different films.
+  const preferSource = searchParams.get('src') as 'phimapi' | 'vsmov' | null;
+
+  const { data, isLoading, isError, refetch } = useMovieDetail(
+    slug,
+    preferSource ?? undefined,
+  );
   const movie = data?.movie;
   const episodes = data?.episodes ?? [];
 
@@ -323,9 +332,11 @@ export default function MovieDetailPage() {
                     // a history entry for this movie; otherwise the WatchPage
                     // defaults to episode 1 of server 1.
                     const h = getHistoryItem(movie.slug);
-                    const qs = h?.episode
-                      ? `?tap=${h.episode}${h.server ? `&sv=${encodeURIComponent(h.server)}` : ''}`
-                      : '';
+                    const parts: string[] = [];
+                    if (h?.episode) parts.push(`tap=${h.episode}`);
+                    if (h?.server) parts.push(`sv=${encodeURIComponent(h.server)}`);
+                    if (preferSource) parts.push(`src=${preferSource}`);
+                    const qs = parts.length > 0 ? `?${parts.join('&')}` : '';
                     navigate(`${ROUTES.WATCH}/${movie.slug}${qs}`);
                   }}
                   className="flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-700"

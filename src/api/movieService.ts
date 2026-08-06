@@ -12,8 +12,11 @@ import type {
  * Dual-source movie detail: phimapi primary, vsmov fallback + episode
  * server merge (extra playback sources).
  */
-export async function getMovieDetail(slug: string): Promise<MovieDetailResponse> {
-  return getMovieDetailDual(slug);
+export async function getMovieDetail(
+  slug: string,
+  prefer?: 'phimapi' | 'vsmov',
+): Promise<MovieDetailResponse> {
+  return getMovieDetailDual(slug, prefer);
 }
 
 export async function getMovies(

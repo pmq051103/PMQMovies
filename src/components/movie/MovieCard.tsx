@@ -23,9 +23,18 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
     ? parseFloat(String(movie.tmdb.vote_average))
     : null;
 
+  // When the movie came from vsmov (dual-source search), append
+  // ?src=vsmov so the detail page loads the correct film even when
+  // both APIs have different movies under the same slug.
+  const source = (movie as MovieListItem & { _source?: string })._source;
+  const detailUrl =
+    source === 'vsmov'
+      ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=vsmov`
+      : `${ROUTES.MOVIE_DETAIL}/${movie.slug}`;
+
   return (
     <Link
-      to={`${ROUTES.MOVIE_DETAIL}/${movie.slug}`}
+      to={detailUrl}
       className="group relative block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
       aria-label={movie.name}
       title={movie.name}

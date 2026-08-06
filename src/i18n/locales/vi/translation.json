@@ -288,10 +288,10 @@
     "countriesTitle": "Phim Theo Quốc Gia"
   },
   "welcome": {
-    "title": "👋 Mẹo cho bạn",
-    "body": "PMQMovies gộp phim từ 2 nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng",
+    "title": "Mẹo cho bạn",
+    "body": "PMQMovies lấy phim từ nhiều nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng",
     "searchBtn": "Tìm kiếm",
-    "bodyTail": "ở góc trên phải — chúng tôi sẽ tìm ở cả 2 kho phim để trả kết quả tốt nhất.",
+    "bodyTail": "ở góc trên phải — chúng tôi sẽ tìm ở cả nhiều kho phim để trả kết quả tốt nhất.",
     "gotIt": "Đã hiểu, cảm ơn!"
   }
 }

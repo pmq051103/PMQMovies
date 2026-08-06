@@ -123,10 +123,10 @@ export function useMoviesBySlug(slug?: string, params?: FilterParams) {
 }
 
 /** Full movie/TV show detail by slug. */
-export function useMovieDetail(slug?: string) {
+export function useMovieDetail(slug?: string, prefer?: 'phimapi' | 'vsmov') {
   return useQuery<MovieDetailResponse>({
-    queryKey: [QUERY_KEYS.MOVIE_DETAIL, slug],
-    queryFn: () => getMovieDetail(slug!),
+    queryKey: [QUERY_KEYS.MOVIE_DETAIL, slug, prefer],
+    queryFn: () => getMovieDetail(slug!, prefer),
     enabled: !!slug,
   });
 }

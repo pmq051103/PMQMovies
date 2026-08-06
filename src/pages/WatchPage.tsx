@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
@@ -103,8 +103,16 @@ export default function WatchPage() {
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Track playback progress received from the same-origin player
+  // wrapper via postMessage. Updated on every timeupdate event and
+  // read when saving watch history.
+  const playbackRef = useRef({ currentTime: 0, duration: 0 });
+
   /* ---- Data fetching ---- */
-  const { data, isLoading, isError } = useMovieDetail(slug);
+  // Propagate the source hint so the watch page loads the same film
+  // the user reached via a vsmov search result.
+  const preferSource = searchParams.get('src') as 'phimapi' | 'vsmov' | null;
+  const { data, isLoading, isError } = useMovieDetail(slug, preferSource ?? undefined);
   const movie = data?.movie ?? null;
   const episodes = data?.episodes ?? [];
 
@@ -128,7 +136,13 @@ export default function WatchPage() {
 
   const currentServer = episodes[serverIndex] ?? null;
   const currentEpisodeData = currentServer?.server_data[episodeIndex] ?? null;
-  const embedUrl = currentEpisodeData?.link_embed ?? '';
+  // Prefer our same-origin player wrapper with the m3u8 stream so we
+  // can receive postMessage events (ended, timeupdate) for auto-next
+  // and progress tracking. Fall back to the upstream embed URL when no
+  // m3u8 link is available.
+  const embedUrl = currentEpisodeData?.link_m3u8
+    ? `/player.html?url=${encodeURIComponent(currentEpisodeData.link_m3u8)}`
+    : currentEpisodeData?.link_embed ?? '';
 
   /* ---- Sync store with resolved episode ---- */
   useEffect(() => {
@@ -147,7 +161,30 @@ export default function WatchPage() {
     return getProgress(slug, currentEpisodeData.slug);
   }, [slug, currentEpisodeData, getProgress]);
 
-  const showResumePrompt = savedProgress > 0;
+  const [resumeDismissed, setResumeDismissed] = useState(false);
+  const showResumePrompt = savedProgress > 0 && !resumeDismissed;
+
+  // Reset dismiss state when episode changes
+  useEffect(() => {
+    setResumeDismissed(false);
+  }, [serverIndex, episodeIndex]);
+
+  /** Send a seek command to the player wrapper iframe. */
+  const seekTo = useCallback((seconds: number) => {
+    try {
+      iframeRef.current?.contentWindow?.postMessage(
+        { action: 'seek', time: seconds },
+        '*',
+      );
+    } catch {
+      // cross-origin fallback — can't seek into upstream embeds
+    }
+  }, []);
+
+  const handleResume = useCallback(() => {
+    seekTo(savedProgress);
+    setResumeDismissed(true);
+  }, [savedProgress, seekTo]);
 
   /* ---- Navigation helpers ---- */
   const navigateToEpisode = useCallback(
@@ -180,6 +217,26 @@ export default function WatchPage() {
     }
   }, [hasNextEpisode, navigateToEpisode, serverIndex, episodeIndex]);
 
+  /* ---- Track playback progress from player wrapper postMessage ---- */
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.event === 'timeupdate') {
+        playbackRef.current = {
+          currentTime: e.data.currentTime ?? 0,
+          duration: e.data.duration ?? 0,
+        };
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // Reset progress when episode changes so stale values don't carry over
+  useEffect(() => {
+    playbackRef.current = { currentTime: 0, duration: 0 };
+  }, [serverIndex, episodeIndex]);
+
   /* ---- Save watch history on unmount / beforeunload ---- */
   useEffect(() => {
     const saveHistory = () => {
@@ -191,8 +248,8 @@ export default function WatchPage() {
         thumb_url: movie.thumb_url,
         episode: currentEpisodeData.slug,
         server: currentServer.server_name,
-        progress: 0,
-        duration: 0,
+        progress: Math.floor(playbackRef.current.currentTime),
+        duration: Math.floor(playbackRef.current.duration),
         updatedAt: Date.now(),
         type: movie.type,
       });
@@ -419,7 +476,12 @@ export default function WatchPage() {
                       src={embedUrl}
                       className="absolute inset-0 h-full w-full"
                       allow="autoplay; fullscreen; encrypted-media"
-                      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation"
+                      // Only sandbox cross-origin embeds (upstream player).
+                      // Our same-origin /player.html needs unrestricted
+                      // access so postMessage works for auto-next.
+                      {...(embedUrl.startsWith('/player.html')
+                        ? {}
+                        : { sandbox: 'allow-same-origin allow-scripts allow-forms allow-popups allow-presentation' })}
                       allowFullScreen
                       title={currentEpisodeData?.name ?? movie.name}
                     />
@@ -442,12 +504,22 @@ export default function WatchPage() {
                   >
                     <FaPlay className="shrink-0 text-red-400" />
                     <p className="flex-1 text-sm text-gray-200">
-                      {t('watch.resumePrompt')}
+                      {t('watch.resumePrompt')}{' '}
+                      <span className="font-medium text-white">
+                        {Math.floor(savedProgress / 60)}:{String(Math.floor(savedProgress % 60)).padStart(2, '0')}
+                      </span>
                     </p>
                     <button
+                      onClick={handleResume}
                       className="shrink-0 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700"
                     >
                       {t('watch.resume')}
+                    </button>
+                    <button
+                      onClick={() => setResumeDismissed(true)}
+                      className="shrink-0 rounded-md bg-gray-700 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-600"
+                    >
+                      {t('common.close', 'Bỏ qua')}
                     </button>
                   </motion.div>
                 )}

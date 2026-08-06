@@ -111,7 +111,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
   const { data, isLoading } = useSearchMovies({
     keyword: debouncedQuery,
-    limit: 16,
+    limit: 32,
   });
 
   const items = data?.items ?? [];
@@ -345,6 +345,22 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                     {items.map((movie, idx) => (
                       <MovieCard key={movie._id} movie={movie} index={idx} />
                     ))}
+                  </motion.div>
+                )}
+
+                {/* Hint to press Enter for full results */}
+                {items.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500"
+                  >
+                    <span>{t('search.pressEnterHint', 'Nhấn')}</span>
+                    <kbd className="rounded border border-gray-600 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300">
+                      Enter ↵
+                    </kbd>
+                    <span>{t('search.pressEnterHintSuffix', 'để xem tất cả kết quả')}</span>
                   </motion.div>
                 )}
               </div>
