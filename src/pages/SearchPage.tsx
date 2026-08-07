@@ -41,6 +41,10 @@ export default function SearchPage() {
   const [keyword, setKeyword] = useState(qParam);
   const debouncedKeyword = useDebounce(keyword, DEBOUNCE_DELAY);
 
+  // Guard ref: when the URL drives a keyword change, skip the
+  // keyword→URL sync to avoid a circular overwrite.
+  const urlDriven = useRef(false);
+
   /* ---- Stores ---- */
   const {
     recentSearches,
@@ -60,8 +64,13 @@ export default function SearchPage() {
   const showNoResults = hasSearched && !isLoading && movies.length === 0;
   const showRecentSearches = !hasSearched && recentSearches.length > 0;
 
-  /* ---- Sync keyword to URL ---- */
+  /* ---- Sync keyword to URL (only for user-typed changes) ---- */
   useEffect(() => {
+    // Skip if this keyword change came from a URL navigation
+    if (urlDriven.current) {
+      urlDriven.current = false;
+      return;
+    }
     if (debouncedKeyword.trim()) {
       setSearchParams({ q: debouncedKeyword.trim() }, { replace: true });
     } else {
@@ -69,12 +78,10 @@ export default function SearchPage() {
     }
   }, [debouncedKeyword, setSearchParams]);
 
-  /* ---- Sync URL param → local state whenever `q` changes ---- */
+  /* ---- Sync URL param → local state (from SearchModal or navigation) ---- */
   useEffect(() => {
-    // When the user arrives from SearchModal (or browser navigation)
-    // the URL `q` param may differ from the local `keyword` state.
-    // Keeping them in sync prevents stale results.
     if (qParam !== keyword) {
+      urlDriven.current = true;
       setKeyword(qParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

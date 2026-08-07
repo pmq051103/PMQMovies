@@ -6,3 +6,4 @@ export { default as FilterSidebar } from './FilterSidebar';
 export { default as EpisodeList } from './EpisodeList';
 export { default as SpotlightGrid } from './SpotlightGrid';
 export { default as TopRankingRow } from './TopRankingRow';
+export { default as PromoBanner } from './PromoBanner';

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { FaFilm, FaTheaterMasks, FaSearch, FaTimes } from 'react-icons/fa';
 
-import { MovieGrid } from '@/components/movie';
+import { MovieGrid, SpotlightGrid } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
 import {
   useGenres,
@@ -262,7 +262,23 @@ function GenreDetailView({ slug }: { slug: string }) {
           {t('search.noResults')}
         </p>
       ) : (
-        <MovieGrid movies={displayMovies} />
+        <>
+          {!isSearching && page === 1 && displayMovies.length >= 5 && (
+            <div className="mb-8">
+              <SpotlightGrid
+                title={genreName}
+                movies={displayMovies.slice(0, 5)}
+              />
+            </div>
+          )}
+          <MovieGrid
+            movies={
+              !isSearching && page === 1 && displayMovies.length >= 5
+                ? displayMovies.slice(5)
+                : displayMovies
+            }
+          />
+        </>
       )}
 
       {!isSearching && data?.pagination && data.pagination.totalPages > 1 && (

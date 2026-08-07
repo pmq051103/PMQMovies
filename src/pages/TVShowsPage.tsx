@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaFilter, FaTimes, FaSearch } from 'react-icons/fa';
 
-import { MovieGrid, FilterSidebar } from '@/components/movie';
+import { MovieGrid, FilterSidebar, SpotlightGrid } from '@/components/movie';
 import { Pagination } from '@/components/common';
 import { useTVShows, useContextualSearch } from '@/hooks';
 import type { FilterState, FilterParams } from '@/types';
@@ -215,7 +215,24 @@ export default function TVShowsPage() {
                       {t('search.noResults')}
                     </p>
                   ) : (
-                    <MovieGrid movies={displayMovies} isLoading={displayLoading} />
+                    <>
+                      {!isSearching && filters.page === 1 && displayMovies.length >= 5 && (
+                        <div className="mb-8">
+                          <SpotlightGrid
+                            title={t('nav.tvShows')}
+                            movies={displayMovies.slice(0, 5)}
+                          />
+                        </div>
+                      )}
+                      <MovieGrid
+                        movies={
+                          !isSearching && filters.page === 1 && displayMovies.length >= 5
+                            ? displayMovies.slice(5, 23)
+                            : displayMovies
+                        }
+                        isLoading={displayLoading}
+                      />
+                    </>
                   )}
 
                   {!isSearching && data?.pagination && (

@@ -7,15 +7,16 @@ import { FaPlay, FaChevronRight } from 'react-icons/fa';
 
 import {
   HeroBanner,
-  MovieRow,
+  MovieCard,
   SpotlightGrid,
   TopRankingRow,
 } from '@/components/movie';
-import MovieCarousel from '@/components/movie/MovieCarousel';
+import PromoBanner from '@/components/movie/PromoBanner';
 import { useHistoryStore } from '@/store';
 import { useLatestMovies, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
 import { getImageUrl } from '@/utils';
+import type { MovieListItem } from '@/types';
 
 /* -------------------------------------------------------------------------- */
 /* Animation                                                                   */
@@ -36,6 +37,46 @@ const itemVariants = {
 };
 
 /* -------------------------------------------------------------------------- */
+/* SectionGrid — replaces MovieRow with a proper grid (no horizontal scroll)  */
+/* -------------------------------------------------------------------------- */
+
+interface SectionGridProps {
+  title: string;
+  movies: MovieListItem[];
+  viewAllLink?: string;
+  /** How many items to show. Defaults to 12. */
+  limit?: number;
+}
+
+function SectionGrid({ title, movies, viewAllLink, limit = 12 }: SectionGridProps) {
+  const { t } = useTranslation();
+  const items = movies.slice(0, limit);
+  if (items.length === 0) return null;
+
+  return (
+    <section>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-white sm:text-2xl">{title}</h2>
+        {viewAllLink && (
+          <Link
+            to={viewAllLink}
+            className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
+          >
+            {t('common.seeAll')}
+            <FaChevronRight className="h-2.5 w-2.5" />
+          </Link>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {items.map((movie) => (
+          <MovieCard key={movie._id ?? movie.slug} movie={movie} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* HomePage                                                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -43,8 +84,7 @@ export default function HomePage() {
   const { t } = useTranslation();
   const { history } = useHistoryStore();
 
-  // Feeds — each targets a distinct endpoint / slice so the sections don't
-  // duplicate each other (Motchill-style variety).
+  /* ── Data feeds ── */
   const { data: latestData } = useLatestMovies(1);
   const { data: singleMovies } = useMoviesBySlug('phim-le', { page: 1 });
   const { data: tvShows } = useMoviesBySlug('phim-bo', { page: 1 });
@@ -53,31 +93,33 @@ export default function HomePage() {
   const { data: vietsub } = useMoviesBySlug('phim-vietsub', { page: 1 });
   const { data: thuyetMinh } = useMoviesBySlug('phim-thuyet-minh', { page: 1 });
   const { data: longTieng } = useMoviesBySlug('phim-long-tieng', { page: 1 });
+
   const { data: topMoviesByViews } = useMoviesBySlug('phim-le', {
-    page: 1,
-    sort_field: 'view_total',
-    sort_type: 'desc',
+    page: 1, sort_field: 'view_total', sort_type: 'desc',
   });
   const { data: topSeriesByViews } = useMoviesBySlug('phim-bo', {
-    page: 1,
-    sort_field: 'view_total',
-    sort_type: 'desc',
+    page: 1, sort_field: 'view_total', sort_type: 'desc',
   });
 
-  // New sections
   const { data: nowPlayingData } = useMoviesBySlug('phim-chieu-rap', { page: 1 });
   const { data: topRatedData } = useMoviesBySlug('phim-le', {
-    page: 1,
-    sort_field: 'tmdb.vote_average',
-    sort_type: 'desc',
+    page: 1, sort_field: 'tmdb.vote_average', sort_type: 'desc',
   });
   const { data: topNowPlayingByRating } = useMoviesBySlug('phim-chieu-rap', {
-    page: 1,
-    sort_field: 'tmdb.vote_average',
-    sort_type: 'desc',
+    page: 1, sort_field: 'tmdb.vote_average', sort_type: 'desc',
+  });
+  // Top phim Việt chiếu rạp
+  const { data: topVietCinema } = useMoviesBySlug('phim-chieu-rap', {
+    page: 1, country: 'viet-nam', sort_field: 'modified.time', sort_type: 'desc',
+  });
+  // Phim bom tấn — most viewed movies of current year (Hollywood blockbusters)
+  const currentYear = new Date().getFullYear();
+  const { data: blockbusterData } = useMoviesBySlug('phim-le', {
+    page: 1, sort_field: 'view_total', sort_type: 'desc', year: currentYear,
   });
   const { data: subteamData } = useMoviesBySlug('subteam', { page: 1 });
 
+  /* ── Derived data ── */
   const heroBannerMovies = useMemo(
     () => latestData?.items.slice(0, 6) ?? [],
     [latestData],
@@ -99,7 +141,6 @@ export default function HomePage() {
     [history],
   );
 
-  // Movies updated today — filter from latest by modified date
   const updatedTodayItems = useMemo(() => {
     if (!latestData?.items) return [];
     const today = new Date().toISOString().slice(0, 10);
@@ -110,22 +151,29 @@ export default function HomePage() {
     });
   }, [latestData]);
 
-  // Featured slice for SpotlightGrid
   const spotlightItems = useMemo(
     () => latestData?.items.slice(6, 11) ?? [],
     [latestData],
   );
 
-  // SpotlightGrid for chiếu rạp — 1 big + 4 small
   const nowPlayingSpotlight = useMemo(
     () => nowPlayingData?.items?.slice(0, 5) ?? [],
     [nowPlayingData],
   );
 
-  // SpotlightGrid for anime
   const animeSpotlight = useMemo(
     () => anime?.items?.slice(0, 5) ?? [],
     [anime],
+  );
+
+  const vietCinemaSpotlight = useMemo(
+    () => topVietCinema?.items?.slice(0, 5) ?? [],
+    [topVietCinema],
+  );
+
+  const blockbusterSpotlight = useMemo(
+    () => blockbusterData?.items?.slice(0, 5) ?? [],
+    [blockbusterData],
   );
 
   return (
@@ -147,7 +195,7 @@ export default function HomePage() {
           initial="hidden"
           animate="visible"
         >
-          {/* ── Continue Watching ── */}
+          {/* ── Continue Watching (horizontal scroll OK for this one) ── */}
           {continueWatchingItems.length > 0 && (
             <motion.section variants={itemVariants}>
               <div className="mb-4 flex items-center justify-between">
@@ -198,7 +246,7 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Spotlight — 1 big + 4 small (asymmetric grid) ── */}
+          {/* ── Phim Đề Cử — Spotlight (1 big + 4 small) ── */}
           {spotlightItems.length === 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
@@ -208,17 +256,25 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Updated Today — landscape cards (MovieCarousel) ── */}
+          {/* ── BOOM BANNER 1 — Chiếu rạp hot ── */}
+          {nowPlayingData?.items && nowPlayingData.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <PromoBanner movie={nowPlayingData.items[0]} accent="red" />
+            </motion.section>
+          )}
+
+          {/* ── Phim Mới Cập Nhật Hôm Nay — Grid ── */}
           {updatedTodayItems.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieCarousel
+              <SectionGrid
                 title={t('home.updatedToday', 'Phim Mới Cập Nhật Hôm Nay')}
                 movies={updatedTodayItems}
+                limit={12}
               />
             </motion.section>
           )}
 
-          {/* ── Now Playing / Chiếu Rạp — SpotlightGrid style ── */}
+          {/* ── Phim Chiếu Rạp — Spotlight (1 big + 4 small) ── */}
           {nowPlayingSpotlight.length === 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
@@ -229,7 +285,30 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Top Phim Đáng Xem — Netflix ranking with ⭐ ── */}
+          {/* ── Phim Bom Tấn — Spotlight ── */}
+          {blockbusterSpotlight.length === 5 && (
+            <motion.section variants={itemVariants}>
+              <SpotlightGrid
+                title={t('home.blockbuster', 'Phim Bom Tấn')}
+                movies={blockbusterSpotlight}
+                viewAllLink={ROUTES.MOVIES + '?sortField=view_total&sortType=desc&year=' + currentYear}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Top Phim Bom Tấn — Ranking ⭐ ── */}
+          {blockbusterData?.items && blockbusterData.items.length > 5 && (
+            <motion.section variants={itemVariants}>
+              <TopRankingRow
+                title={t('home.topBlockbuster', 'Top 10 Bom Tấn ' + currentYear)}
+                movies={blockbusterData.items.slice(5)}
+                viewAllLink={ROUTES.MOVIES + '?sortField=view_total&sortType=desc&year=' + currentYear}
+                showRating
+              />
+            </motion.section>
+          )}
+
+          {/* ── Top Phim Đáng Xem — Ranking ⭐ ── */}
           {topRatedData?.items && topRatedData.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <TopRankingRow
@@ -241,17 +320,37 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Trending — landscape cards (MovieCarousel) ── */}
-          {latestData?.items && latestData.items.length > 0 && (
+          {/* ── Phim Việt Chiếu Rạp — Spotlight ── */}
+          {vietCinemaSpotlight.length === 5 && (
             <motion.section variants={itemVariants}>
-              <MovieCarousel
-                title={t('home.trending')}
-                movies={latestData.items.slice(0, 20)}
+              <SpotlightGrid
+                title={t('home.topVietCinema', 'Phim Việt Chiếu Rạp')}
+                movies={vietCinemaSpotlight}
+                viewAllLink={ROUTES.NOW_PLAYING + '?country=viet-nam'}
               />
             </motion.section>
           )}
 
-          {/* ── Top 10 Chiếu Rạp — ranking with ⭐ ── */}
+          {/* ── BOOM BANNER 2 — Top rated pick ── */}
+          {topRatedData?.items && topRatedData.items.length > 1 && (
+            <motion.section variants={itemVariants}>
+              <PromoBanner movie={topRatedData.items[1]} accent="blue" />
+            </motion.section>
+          )}
+
+          {/* ── Phim Lẻ Mới — Grid ── */}
+          {singleMovies?.items && singleMovies.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <SectionGrid
+                title={t('home.latestMovies')}
+                movies={singleMovies.items}
+                viewAllLink={ROUTES.MOVIES}
+                limit={12}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Top 10 Chiếu Rạp — Ranking ⭐ ── */}
           {topNowPlayingByRating?.items && topNowPlayingByRating.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <TopRankingRow
@@ -263,7 +362,26 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Top 10 Phim Lẻ — ranking by views ── */}
+          {/* ── BOOM BANNER 3 — Phim Việt pick ── */}
+          {topVietCinema?.items && topVietCinema.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <PromoBanner movie={topVietCinema.items[0]} accent="purple" />
+            </motion.section>
+          )}
+
+          {/* ── Phim Bộ Mới — Grid ── */}
+          {tvShows?.items && tvShows.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <SectionGrid
+                title={t('home.latestTVShows')}
+                movies={tvShows.items}
+                viewAllLink={ROUTES.TV_SHOWS}
+                limit={12}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Top 10 Phim Lẻ — Ranking by views ── */}
           {topMoviesByViews?.items && topMoviesByViews.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <TopRankingRow
@@ -274,28 +392,24 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Latest Movies — poster cards (MovieRow) ── */}
-          {singleMovies?.items && singleMovies.items.length > 0 && (
+          {/* ── BOOM BANNER 4 — Subteam pick ── */}
+          {subteamData?.items && subteamData.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
-                title={t('home.latestMovies')}
-                movies={singleMovies.items}
-                viewAllLink={ROUTES.MOVIES}
+              <PromoBanner movie={subteamData.items[0]} accent="green" />
+            </motion.section>
+          )}
+
+          {/* ── Anime — Spotlight (1 big + 4 small) ── */}
+          {animeSpotlight.length === 5 && (
+            <motion.section variants={itemVariants}>
+              <SpotlightGrid
+                title={t('home.anime')}
+                movies={animeSpotlight}
               />
             </motion.section>
           )}
 
-          {/* ── Latest TV Shows — landscape cards (MovieCarousel) ── */}
-          {tvShows?.items && tvShows.items.length > 0 && (
-            <motion.section variants={itemVariants}>
-              <MovieCarousel
-                title={t('home.latestTVShows')}
-                movies={tvShows.items}
-              />
-            </motion.section>
-          )}
-
-          {/* ── Top 10 Phim Bộ — ranking by views ── */}
+          {/* ── Top 10 Phim Bộ — Ranking by views ── */}
           {topSeriesByViews?.items && topSeriesByViews.items.length > 0 && (
             <motion.section variants={itemVariants}>
               <TopRankingRow
@@ -306,62 +420,57 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Anime — SpotlightGrid (asymmetric) ── */}
-          {animeSpotlight.length === 5 && (
-            <motion.section variants={itemVariants}>
-              <SpotlightGrid
-                title={t('home.anime')}
-                movies={animeSpotlight}
-              />
-            </motion.section>
-          )}
-
-          {/* ── TV Shows — poster cards (MovieRow) ── */}
+          {/* ── TV Shows — Grid ── */}
           {tvShowsCategory?.items && tvShowsCategory.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <SectionGrid
                 title={t('home.tvShowsCategory', 'TV Shows')}
                 movies={tvShowsCategory.items}
+                limit={12}
               />
             </motion.section>
           )}
 
-          {/* ── Vietsub — landscape cards (MovieCarousel) ── */}
+          {/* ── Phim Vietsub — Grid ── */}
           {vietsub?.items && vietsub.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieCarousel
+              <SectionGrid
                 title={t('home.vietsub', 'Phim Vietsub')}
                 movies={vietsub.items}
+                limit={12}
               />
             </motion.section>
           )}
 
-          {/* ── Thuyết Minh — poster cards (MovieRow) ── */}
+          {/* ── Phim Thuyết Minh — Grid ── */}
           {thuyetMinh?.items && thuyetMinh.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <SectionGrid
                 title={t('home.thuyetMinh', 'Phim Thuyết Minh')}
                 movies={thuyetMinh.items}
+                limit={12}
               />
             </motion.section>
           )}
 
-          {/* ── Lồng Tiếng — landscape cards (MovieCarousel) ── */}
+          {/* ── Phim Lồng Tiếng — Grid ── */}
           {longTieng?.items && longTieng.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieCarousel
+              <SectionGrid
                 title={t('home.longTieng', 'Phim Lồng Tiếng')}
                 movies={longTieng.items}
+                limit={12}
               />
             </motion.section>
           )}
 
-          {/* ── Subteam Picks — poster cards (MovieRow) ── */}
+          {/* ── Subteam Đề Cử — Grid ── */}
           {subteamData?.items && subteamData.items.length > 0 && (
             <motion.section variants={itemVariants}>
-              <MovieRow
+              <SectionGrid
                 title={t('home.subteam', 'Subteam Đề Cử')}
                 movies={subteamData.items}
+                limit={12}
               />
             </motion.section>
           )}

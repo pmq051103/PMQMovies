@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { FaHeart, FaTimes } from 'react-icons/fa';
+import { FaHeart, FaTimes, FaPlay } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import { useFavoriteStore } from '@/store';
-import { MovieCard } from '@/components/movie';
 import { EmptyState } from '@/components/common';
+import { ROUTES } from '@/constants';
+import { getImageUrl } from '@/utils';
 
 export default function FavoritesPage() {
   const { t } = useTranslation();
@@ -43,18 +45,56 @@ export default function FavoritesPage() {
                   transition={{ duration: 0.3, delay: index * 0.04 }}
                   className="group relative"
                 >
-                  <MovieCard movie={movie} />
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeFavorite(movie.slug);
-                    }}
-                    className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-all duration-200 hover:bg-red-600 group-hover:opacity-100"
-                    aria-label={t('common.remove')}
+                  {/* Poster */}
+                  <Link
+                    to={`${ROUTES.MOVIE_DETAIL}/${movie.slug}`}
+                    className="relative block aspect-[2/3] overflow-hidden rounded-lg bg-gray-900"
                   >
-                    <FaTimes className="text-sm" />
-                  </button>
+                    <img
+                      src={getImageUrl(movie.poster_url) || getImageUrl(movie.thumb_url)}
+                      alt={movie.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+                    {/* Year + rating badges */}
+                    <div className="absolute left-2 top-2 flex gap-1.5">
+                      {movie.year > 0 && (
+                        <span className="rounded bg-gray-900/80 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
+                          {movie.year}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Remove button — top-right */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeFavorite(movie.slug);
+                      }}
+                      className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-all duration-200 hover:bg-red-600 group-hover:opacity-100"
+                      aria-label={t('common.remove')}
+                    >
+                      <FaTimes className="text-xs" />
+                    </button>
+                  </Link>
+
+                  {/* Title */}
+                  <p className="mt-2 truncate text-sm font-medium text-gray-200">
+                    {movie.name}
+                  </p>
+
+                  {/* ALWAYS VISIBLE watch button — below title */}
+                  <Link
+                    to={`${ROUTES.WATCH}/${movie.slug}`}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+                  >
+                    <FaPlay className="h-3 w-3" />
+                    {t('hero.watchNow', 'Xem Ngay')}
+                  </Link>
                 </motion.div>
               ))}
             </div>

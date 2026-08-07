@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import WelcomeTip from "@/components/common/WelcomeTip";
+import ScrollToTopButton from "@/components/common/ScrollToTopButton";
 import { useLanguageStore } from "@/store/useLanguageStore";
 
 /**
@@ -38,6 +39,9 @@ const MainLayout: React.FC = () => {
 
       {/* First-visit tip about dual-source search */}
       <WelcomeTip />
+
+      {/* Floating scroll-to-top button */}
+      <ScrollToTopButton />
     </>
   );
 };

@@ -7,6 +7,7 @@ import {
   FaTimes,
   FaUserCircle,
   FaChevronDown,
+  FaHeart,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -77,6 +78,7 @@ const Header: React.FC = () => {
     { label: t("nav.tvShows"), path: ROUTES.TV_SHOWS },
     { label: t("nav.nowPlaying"), path: ROUTES.NOW_PLAYING },
     { label: t("nav.topRated"), path: ROUTES.TOP_RATED },
+    { label: t("nav.favorites"), path: ROUTES.FAVORITES },
   ];
 
   const handleSearchOpen = useCallback(() => {
@@ -246,14 +248,29 @@ const Header: React.FC = () => {
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSearchOpen}
+              {/* Search button + dropdown wrapper */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={handleSearchOpen}
+                  className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
+                  aria-label={t("search.open")}
+                >
+                  <FaSearch className="h-4 w-4" />
+                </button>
+
+                <SearchModal isOpen={isSearchOpen} onClose={handleSearchClose} />
+              </div>
+
+              {/* Favorites link */}
+              <RouterLink
+                to={ROUTES.FAVORITES}
                 className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
-                aria-label={t("search.open")}
+                aria-label={t("nav.favorites")}
+                title={t("nav.favorites")}
               >
-                <FaSearch className="h-4 w-4" />
-              </button>
+                <FaHeart className="h-4 w-4" />
+              </RouterLink>
 
               <div className="hidden sm:block">
                 <LanguageSwitcher />
@@ -402,7 +419,6 @@ const Header: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <SearchModal isOpen={isSearchOpen} onClose={handleSearchClose} />
     </>
   );
 };
