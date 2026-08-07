@@ -97,8 +97,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   }, []);
 
   const handleResultClick = useCallback(
-    (slug: string) => {
-      navigate(`${ROUTES.MOVIE_DETAIL}/${slug}`);
+    (movie: { slug: string; _source?: string }) => {
+      const url = movie._source === 'vsmov'
+        ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=vsmov`
+        : `${ROUTES.MOVIE_DETAIL}/${movie.slug}`;
+      navigate(url);
       onClose();
     },
     [navigate, onClose],
@@ -225,7 +228,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                     <button
                       key={movie._id}
                       type="button"
-                      onClick={() => handleResultClick(movie.slug)}
+                      onClick={() => handleResultClick(movie as any)}
                       className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-gray-800/70"
                     >
                       {/* Poster thumbnail */}
@@ -277,7 +280,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                 onClick={handleViewAll}
                 className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-red-400"
               >
-                <span>{t('search.pressEnterHint', 'Xem tất cả kết quả')}</span>
+                <span>{t('search.pressEnterHint', 'Xem tat ca ket qua')}</span>
                 <kbd className="rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">
                   Enter
                 </kbd>

@@ -32,6 +32,20 @@ async function safe<T>(p: Promise<T>): Promise<T | null> {
   }
 }
 
+/** Like safe() but retries once after a short delay on failure. */
+async function safeRetry<T>(fn: () => Promise<T>, delayMs = 800): Promise<T | null> {
+  try {
+    return await fn();
+  } catch {
+    try {
+      await new Promise((r) => setTimeout(r, delayMs));
+      return await fn();
+    } catch {
+      return null;
+    }
+  }
+}
+
 function dedupeBySlug(list: MovieListItem[]): MovieListItem[] {
   const seen = new Set<string>();
   const out: MovieListItem[] = [];
@@ -72,7 +86,7 @@ export async function getLatestMoviesDual(
     ),
     // vsmov's freshness is on the first page only; skip for deeper pages.
     page === 1
-      ? safe(
+      ? safeRetry(() =>
           vsmovGet<APIListResponse<MovieListItem>>(
             '/danh-sach/phim-moi-cap-nhat',
             { params: { page: 1 } },
@@ -106,42 +120,31 @@ export async function searchMoviesDual(
   const trimmed = keyword.trim();
   if (!trimmed) return { status: true, items: [] };
 
-  // Ask each API for generous results so the ranker has room to
-  // promote the best matches from either source. phimapi caps at 64
-  // items per page, so for larger requests we also fetch page 2.
-  const fetchLimit = Math.max(limit * 2, 64);
-  const needPage2 = fetchLimit > 64;
+  // Fetch max page 1 from both APIs (64 items each). After deduping
+  // and ranking, this yields 50-80+ unique results — plenty for search.
+  const fetchLimit = 64;
 
-  const [primary, primaryP2, secondary] = await Promise.all([
+  const [primary, secondary] = await Promise.all([
     safe(
       apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
         params: { keyword: trimmed, limit: fetchLimit },
       }),
     ),
-    needPage2
-      ? safe(
-          apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
-            params: { keyword: trimmed, limit: fetchLimit, page: 2 },
-          }),
-        )
-      : Promise.resolve(null),
-    safe(
+    safeRetry(() =>
       vsmovGet<APIListResponse<MovieListItem>>('/tim-kiem', {
         params: { keyword: trimmed, limit: fetchLimit },
       }),
     ),
   ]);
 
-  const primaryItems = [
-    ...extractItems(primary),
-    ...extractItems(primaryP2),
-  ];
+  const primaryItems = extractItems(primary);
   const secondaryItems = extractItems(secondary);
 
   // Rank by relevance instead of naively concatenating — ensures exact
   // matches from either source surface first and vsmov results aren't
   // buried behind loosely-matching phimapi results.
-  const ranked = rankAndMerge(primaryItems, secondaryItems, trimmed, limit);
+  // Return ALL matched results — UI handles pagination/load-more
+  const ranked = rankAndMerge(primaryItems, secondaryItems, trimmed, Math.max(limit, 128));
 
   return { status: true, items: ranked };
 }

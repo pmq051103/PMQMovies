@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaSearch, FaTimes, FaHistory, FaTrash } from 'react-icons/fa';
+import { FaSearch, FaTimes, FaHistory, FaTrash, FaChevronDown } from 'react-icons/fa';
 
 import { MovieGrid } from '@/components/movie';
 import { GridSkeleton, EmptyState } from '@/components/common';
@@ -26,6 +26,9 @@ const chipVariants = {
   exit: { opacity: 0, scale: 0.8, transition: { duration: 0.15 } },
 };
 
+const INITIAL_VISIBLE = 24;
+const LOAD_MORE_STEP = 24;
+
 /* ------------------------------------------------------------------ */
 /* SearchPage                                                          */
 /* ------------------------------------------------------------------ */
@@ -37,8 +40,9 @@ export default function SearchPage() {
 
   const qParam = searchParams.get('q') ?? '';
 
-  /* ---- Local state for input field ---- */
+  /* ---- Local state ---- */
   const [inputValue, setInputValue] = useState(qParam);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const debouncedKeyword = useDebounce(inputValue, DEBOUNCE_DELAY);
 
   /* ---- Stores ---- */
@@ -52,7 +56,7 @@ export default function SearchPage() {
   /* ---- Fetch results ---- */
   const { data, isLoading } = useSearchMovies({
     keyword: debouncedKeyword,
-    limit: 64,
+    limit: 120,
   });
 
   const movies = data?.items ?? [];
@@ -60,13 +64,13 @@ export default function SearchPage() {
   const showNoResults = hasSearched && !isLoading && movies.length === 0;
   const showRecentSearches = !hasSearched && recentSearches.length > 0;
 
-  /**
-   * URL → input sync: When SearchModal navigates here with ?q=newterm,
-   * qParam changes and we update the input to match.
-   * This is the ONLY direction of sync — no circular dependency.
-   */
+  const visibleMovies = movies.slice(0, visibleCount);
+  const hasMore = movies.length > visibleCount;
+
+  /* ---- URL → input sync ---- */
   useEffect(() => {
     setInputValue(qParam);
+    setVisibleCount(INITIAL_VISIBLE); // Reset on new search
   }, [qParam]);
 
   /* ---- Focus input on mount ---- */
@@ -74,12 +78,16 @@ export default function SearchPage() {
     inputRef.current?.focus();
   }, []);
 
+  /* ---- Reset visible count when keyword changes ---- */
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [debouncedKeyword]);
+
   /* ---- Handlers ---- */
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
       setInputValue(val);
-      // Update URL immediately (replace, no history spam)
       if (val.trim()) {
         setSearchParams({ q: val.trim() }, { replace: true });
       } else {
@@ -115,6 +123,10 @@ export default function SearchPage() {
     },
     [addRecentSearch, setSearchParams],
   );
+
+  const handleLoadMore = useCallback(() => {
+    setVisibleCount((prev) => prev + LOAD_MORE_STEP);
+  }, []);
 
   return (
     <>
@@ -218,9 +230,16 @@ export default function SearchPage() {
           {/* Results section */}
           <div className="mt-8">
             {hasSearched && (
-              <h2 className="mb-6 text-lg font-semibold text-gray-200">
-                {t('search.results')}
-              </h2>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-200">
+                  {t('search.results')}
+                </h2>
+                {movies.length > 0 && (
+                  <span className="text-sm text-gray-500">
+                    {visibleMovies.length} / {movies.length} {t('common.results')}
+                  </span>
+                )}
+              </div>
             )}
 
             {isLoading && hasSearched && <GridSkeleton />}
@@ -234,7 +253,26 @@ export default function SearchPage() {
             )}
 
             {hasSearched && !isLoading && movies.length > 0 && (
-              <MovieGrid movies={movies} />
+              <>
+                <MovieGrid movies={visibleMovies} />
+
+                {/* Load more button */}
+                {hasMore && (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={handleLoadMore}
+                      className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800/50 px-8 py-3 text-sm font-semibold text-gray-300 transition-all hover:border-red-500/50 hover:bg-gray-800 hover:text-white"
+                    >
+                      <FaChevronDown className="h-3 w-3" />
+                      {t('common.showMore', 'Xem thêm')}
+                      <span className="text-xs text-gray-500">
+                        ({movies.length - visibleCount} phim)
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

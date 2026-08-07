@@ -8,7 +8,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
  */
 export const vsmovClient: AxiosInstance = axios.create({
   baseURL: '/api2',
-  timeout: 12_000,
+  timeout: 20_000,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
