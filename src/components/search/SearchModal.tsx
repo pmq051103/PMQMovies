@@ -78,6 +78,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
         addRecentSearch(trimmed);
         navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(trimmed)}`);
         onClose();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
     [query, addRecentSearch, navigate, onClose],
@@ -89,6 +90,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       addRecentSearch(trimmed);
       navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(trimmed)}`);
       onClose();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [query, addRecentSearch, navigate, onClose]);
 
@@ -102,6 +104,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
         ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=vsmov`
         : `${ROUTES.MOVIE_DETAIL}/${movie.slug}`;
       navigate(url);
+      window.scrollTo({ top: 0 });
       onClose();
     },
     [navigate, onClose],

@@ -279,7 +279,8 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Phim Mới Cập Nhật Hôm Nay — lọc đúng ngày hôm nay ── */}
+
+          {/* ── Phim Mới Cập Nhật Hôm Nay ── */}
           {updatedTodayItems.length > 0 && (
             <motion.section variants={itemVariants}>
               <SectionGrid
@@ -297,16 +298,6 @@ export default function HomePage() {
             </motion.section>
           )}
 
-          {/* ── Phim Mới Cập Nhật Hôm Nay — Grid ── */}
-          {latestUpdatedItems.length > 0 && (
-            <motion.section variants={itemVariants}>
-              <SectionGrid
-                title={t('home.updatedToday', 'Mới Cập Nhật')}
-                movies={latestUpdatedItems}
-                limit={12}
-              />
-            </motion.section>
-          )}
 
           {/* ── Phim Chiếu Rạp — Spotlight (1 big + 4 small) ── */}
           {nowPlayingSpotlight.length >= 5 && (

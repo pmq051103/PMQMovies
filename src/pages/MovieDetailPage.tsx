@@ -361,12 +361,10 @@ export default function MovieDetailPage() {
                 animate="visible"
                 custom={2}
               >
+                {episodes.length > 0 && episodes.some((ep) => ep.server_data?.length > 0) && (
                 <button
                   type="button"
                   onClick={() => {
-                    // Resume at the last-watched episode + server if we have
-                    // a history entry for this movie; otherwise the WatchPage
-                    // defaults to episode 1 of server 1.
                     const h = getHistoryItem(movie.slug);
                     const parts: string[] = [];
                     if (h?.episode) parts.push(`tap=${h.episode}`);
@@ -380,6 +378,7 @@ export default function MovieDetailPage() {
                   <FaPlay className="text-sm" />
                   {t('movie.watchNow')}
                 </button>
+                )}
 
                 {movie.trailer_url && (
                   <a
