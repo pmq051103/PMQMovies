@@ -94,7 +94,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
   const current = slides[currentIndex];
 
   return (
-    <section className="relative w-full min-h-[500px] h-[60vh] overflow-hidden bg-black">
+    <section className="always-dark relative w-full min-h-[500px] h-[60vh] overflow-hidden bg-black">
       {/* Background image with AnimatePresence */}
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div

@@ -58,7 +58,7 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="always-dark grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Hero card — landscape, large */}
         <Link
           to={`${ROUTES.MOVIE_DETAIL}/${hero.slug}`}

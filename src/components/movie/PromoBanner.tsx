@@ -53,7 +53,7 @@ const PromoBanner: React.FC<PromoBannerProps> = ({ movie, accent = 'red' }) => {
     | undefined;
 
   return (
-    <section className="relative -mx-4 overflow-hidden sm:-mx-6 lg:-mx-8">
+    <section className="always-dark relative -mx-4 overflow-hidden sm:-mx-6 lg:-mx-8">
       {/* Background image — full width */}
       <div className="relative aspect-[21/9] sm:aspect-[3/1] md:aspect-[4/1]">
         <img
