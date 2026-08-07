@@ -145,7 +145,7 @@ const Footer: React.FC = () => {
                   className="mt-1 inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700"
                 >
                   <FaHeart className="h-3 w-3" />
-                  {t("footer.donateCta", "Ủng hộ PMQMovies")}
+                  {t("footer.donateCta", "Ủng hộ Không Gian Phim")}
                 </Link>
               </li>
             </ul>
@@ -155,7 +155,18 @@ const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="mt-10 border-t border-gray-800 pt-6 text-center">
           <p className="text-sm text-gray-500">
-            &copy; {currentYear} PMQMovies. {t("footer.copyright", "All rights reserved.")}
+            &copy; {currentYear} Không Gian Phim. {t("footer.rights")}
+          </p>
+          <p className="mt-2 text-sm text-gray-600">
+            Website được phát triển bởi{' '}
+            <a
+              href="https://www.facebook.com/pmq05"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-500 hover:text-red-400 transition-colors"
+            >
+              Phạm Minh Quang
+            </a>
           </p>
         </div>
       </div>

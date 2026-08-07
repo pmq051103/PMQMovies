@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { FaStar } from 'react-icons/fa';
 import { useMoviesBySlug } from '@/hooks';
 import { LoadingOverlay } from '@/components/common';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 
 const TABS = [
   { key: 'top10', count: 10 },
@@ -88,10 +88,11 @@ export default function TopRatedPage() {
 
                   <div className="relative h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg md:h-32 md:w-22">
                     <img
-                      src={getImageUrl(movie.poster_url)}
+                      src={getMoviePoster(movie.poster_url, movie.thumb_url)}
                       alt={movie.name}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
+                      onError={onImgError}
                     />
                   </div>
 

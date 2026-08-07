@@ -4,7 +4,7 @@ import { FaChevronRight, FaStar } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
-import { getImageUrl } from "@/utils";
+import { getMoviePoster, onImgError } from "@/utils";
 import type { MovieListItem } from "@/types";
 
 interface TopRankingRowProps {
@@ -72,10 +72,11 @@ const TopRankingRow: React.FC<TopRankingRowProps> = ({
               {/* Poster */}
               <div className="relative aspect-[2/3] w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-900 sm:w-32">
                 <img
-                  src={getImageUrl(m.poster_url) || getImageUrl(m.thumb_url)}
+                  src={getMoviePoster(m.poster_url, m.thumb_url)}
                   alt={m.name}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={onImgError}
                 />
                 <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/25" />
                 {showRating && (m as any).tmdb?.vote_average > 0 && (

@@ -16,10 +16,10 @@ export interface SEOConfig {
   canonicalBaseUrl: string;
 }
 
-export const SITE_NAME = "PMQMovies";
+export const SITE_NAME = "Không Gian Phim";
 
 export const DEFAULT_SEO: SEOConfig = {
-  title: "PMQMovies - Xem phim online chất lượng cao, miễn phí",
+  title: "Không Gian Phim - Xem phim online chất lượng cao, miễn phí",
   description:
     "Xem phim online miễn phí chất lượng cao, cập nhật phim mới nhanh nhất: phim lẻ, phim bộ, hoạt hình, TV Shows với phụ đề Vietsub, thuyết minh và lồng tiếng.",
   keywords:
@@ -30,7 +30,7 @@ export const DEFAULT_SEO: SEOConfig = {
   twitterCard: "summary_large_image",
   locale: "vi_VN",
   themeColor: "#0f0f0f",
-  canonicalBaseUrl: "https://pmqmovies.example.com",
+  canonicalBaseUrl: "https://khonggianphim.com",
 };
 
 /** Build a page-specific SEO config, merging with the defaults. */

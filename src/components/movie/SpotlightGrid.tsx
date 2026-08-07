@@ -5,7 +5,7 @@ import { FaStar, FaPlay, FaChevronRight } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
-import { getImageUrl } from "@/utils";
+import { getImageUrl, getMoviePoster, onImgError } from "@/utils";
 import type { MovieListItem } from "@/types";
 
 interface SpotlightGridProps {
@@ -58,10 +58,11 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
           aria-label={hero.name}
         >
           <img
-            src={getImageUrl(hero.thumb_url) || getImageUrl(hero.poster_url)}
+            src={getMoviePoster(hero.thumb_url, hero.poster_url)}
             alt={hero.name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={onImgError}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
 
@@ -112,10 +113,11 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
                 aria-label={m.name}
               >
                 <img
-                  src={getImageUrl(m.thumb_url) || getImageUrl(m.poster_url)}
+                  src={getMoviePoster(m.thumb_url, m.poster_url)}
                   alt={m.name}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={onImgError}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-3">

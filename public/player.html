@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PMQ Player</title>
+<title>Không Gian Phim Player</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
@@ -95,6 +95,72 @@
               hls.attachMedia(video);
               art.hls = hls;
               art.on('destroy', function () { hls.destroy(); });
+
+              // ── Quality selector — only show if stream has multiple levels ──
+              var qualityAdded = false;
+              var hlsReady = false;
+              var artReady = false;
+
+              function tryAddQuality() {
+                if (qualityAdded || !hlsReady || !artReady) return;
+                var levels = hls.levels || [];
+                // Only show quality picker when there are 2+ levels to switch between
+                if (levels.length <= 1) return;
+                qualityAdded = true;
+
+                function getLabel(level) {
+                  var h = level.height || 0;
+                  if (h >= 2160) return '4K';
+                  if (h >= 1440) return '1440p';
+                  if (h >= 1080) return '1080p';
+                  if (h >= 720) return '720p';
+                  if (h >= 480) return '480p';
+                  if (h >= 360) return '360p';
+                  if (h > 0) return h + 'p';
+                  var bw = level.bitrate || 0;
+                  if (bw >= 5000000) return 'FHD';
+                  if (bw >= 2500000) return 'HD';
+                  if (bw >= 1000000) return 'SD';
+                  return 'SD';
+                }
+
+                var items = levels.map(function (lv, i) {
+                  return { html: getLabel(lv), value: i };
+                });
+                items.sort(function (a, b) {
+                  var ha = levels[a.value].height || 0;
+                  var hb = levels[b.value].height || 0;
+                  if (ha !== hb) return hb - ha;
+                  return (levels[b.value].bitrate || 0) - (levels[a.value].bitrate || 0);
+                });
+                items.unshift({ html: 'Tự động', value: -1 });
+
+                art.setting.add([{
+                  html: 'Chất lượng',
+                  width: 200,
+                  tooltip: 'Tự động',
+                  selector: items.map(function (it) {
+                    return { html: it.html, value: it.value, default: it.value === -1 };
+                  }),
+                  onSelect: function (item) {
+                    hls.currentLevel = item.value;
+                    return item.html;
+                  },
+                }]);
+              }
+
+              hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                hlsReady = true;
+                tryAddQuality();
+              });
+              hls.on(Hls.Events.LEVEL_LOADED, function () {
+                hlsReady = true;
+                tryAddQuality();
+              });
+              art.on('ready', function () {
+                artReady = true;
+                tryAddQuality();
+              });
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
               video.src = url;
             }

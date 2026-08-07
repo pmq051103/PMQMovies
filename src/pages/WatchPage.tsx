@@ -17,7 +17,7 @@ import { EpisodeList, MovieRow } from '@/components/movie';
 import { ROUTES } from '@/constants';
 import { useMovieDetail, useMoviesInGenre } from '@/hooks';
 import { usePlayerStore, useHistoryStore } from '@/store';
-import { getImageUrl } from '@/utils';
+import { getImageUrl, getMoviePoster } from '@/utils';
 import type { Episode } from '@/types';
 
 /* ------------------------------------------------------------------ */
@@ -403,7 +403,7 @@ export default function WatchPage() {
           property="og:title"
           content={`${movie.name}${currentEpisodeData ? ` - ${currentEpisodeData.name}` : ''}`}
         />
-        <meta property="og:image" content={getImageUrl(movie.thumb_url)} />
+        <meta property="og:image" content={getMoviePoster(movie.thumb_url, movie.poster_url)} />
       </Helmet>
 
       {/* Cinema mode backdrop — full-viewport dark surface. Clicking it
@@ -490,6 +490,21 @@ export default function WatchPage() {
                       <FaFilm className="text-4xl text-gray-600" />
                     </div>
                   )}
+
+                  {/* Logo watermark — top-right corner of video */}
+                  <Link
+                    to={ROUTES.HOME}
+                    className="pointer-events-auto absolute right-3 top-3 z-10 opacity-40 transition-opacity hover:opacity-80"
+                    title="Không Gian Phim"
+                  >
+                    <img
+                      src="/logo.png"
+                      alt="Không Gian Phim"
+                      className="h-8 w-auto drop-shadow-lg sm:h-10"
+                      draggable={false}
+                      style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.8))' }}
+                    />
+                  </Link>
                 </div>
               </div>
 

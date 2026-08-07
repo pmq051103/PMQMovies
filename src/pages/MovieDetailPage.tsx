@@ -16,7 +16,7 @@ import ShareButtons from '@/components/common/ShareButtons';
 import { useFavoriteStore, useHistoryStore } from '@/store';
 import { useMovieDetail, useMoviesByGenre } from '@/hooks';
 import { ROUTES } from '@/constants';
-import { getImageUrl } from '@/utils';
+import { getImageUrl, getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 const fadeIn = {
@@ -124,8 +124,8 @@ export default function MovieDetailPage() {
   /* ------------------------------------------------------------------ */
   /* Render                                                              */
   /* ------------------------------------------------------------------ */
-  const backdropUrl = getImageUrl(movie.thumb_url);
-  const posterUrl = getImageUrl(movie.poster_url);
+  const backdropUrl = getImageUrl(movie.thumb_url) || getImageUrl(movie.poster_url);
+  const posterUrl = getMoviePoster(movie.poster_url, movie.thumb_url);
   const isSeries = movie.type === 'series';
 
   return (
@@ -146,6 +146,7 @@ export default function MovieDetailPage() {
             src={backdropUrl}
             alt={movie.name}
             className="h-full w-full object-cover"
+            onError={onImgError}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-950/80 to-transparent" />
@@ -166,6 +167,7 @@ export default function MovieDetailPage() {
                 src={posterUrl}
                 alt={movie.name}
                 className="w-full rounded-xl shadow-2xl shadow-black/50"
+                onError={onImgError}
               />
             </motion.div>
 

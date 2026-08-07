@@ -274,7 +274,7 @@ function GenreDetailView({ slug }: { slug: string }) {
           <MovieGrid
             movies={
               !isSearching && page === 1 && displayMovies.length >= 5
-                ? displayMovies.slice(5)
+                ? displayMovies.slice(5, 23)
                 : displayMovies
             }
           />

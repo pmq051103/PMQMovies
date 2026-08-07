@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaHistory, FaPlay, FaTrash, FaTimes } from 'react-icons/fa';
 import { useHistoryStore } from '@/store';
 import { EmptyState } from '@/components/common';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 
 export default function HistoryPage() {
   const { t } = useTranslation();
@@ -103,10 +103,11 @@ export default function HistoryPage() {
                       className="relative h-20 w-14 flex-shrink-0 overflow-hidden rounded-lg md:h-28 md:w-20"
                     >
                       <img
-                        src={getImageUrl(item.poster_url || item.thumb_url)}
+                        src={getMoviePoster(item.poster_url, item.thumb_url)}
                         alt={item.name}
                         className="h-full w-full object-cover"
                         loading="lazy"
+                        onError={onImgError}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                         <FaPlay className="text-lg text-white" />

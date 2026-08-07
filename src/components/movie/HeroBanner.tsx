@@ -5,7 +5,7 @@ import { FaPlay, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 interface HeroBannerProps {
@@ -99,10 +99,11 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
           className="absolute inset-0"
         >
           <img
-            src={getImageUrl(current.thumb_url)}
+            src={getMoviePoster(current.thumb_url, current.poster_url)}
             alt={current.name}
             className="h-full w-full object-cover"
             loading={currentIndex === 0 ? 'eager' : 'lazy'}
+            onError={onImgError}
           />
         </motion.div>
       </AnimatePresence>

@@ -55,7 +55,8 @@
     "thuyetMinh": "Voiceover",
     "longTieng": "Vietnamese Dubbed",
     "tvShowsCategory": "TV Shows",
-    "updatedToday": "Updated Today",
+    "updatedToday": "Recently Updated",
+    "newToday": "Updated Today",
     "nowPlaying": "Now In Theaters",
     "topMustWatch": "Top Must-Watch Movies",
     "topNowPlaying": "Top 10 In Theaters",
@@ -282,7 +283,7 @@
     "emailPlaceholder": "Enter your email",
     "phone": "Phone",
     "donate": "Donate",
-    "donateCta": "Support PMQMovies"
+    "donateCta": "Support Không Gian Phim"
   },
   "episode": {
     "server": "Server",
@@ -293,7 +294,7 @@
     "homeTitle": "Watch Movies Online - Latest Updates",
     "homeDescription": "Watch movies online for free, movies, TV shows, anime with high quality",
     "moviesTitle": "Movies - Watch Movies Online",
-    "tvShowsTitle": "Series - PMQMovies",
+    "tvShowsTitle": "Series - Không Gian Phim",
     "searchTitle": "Search Movies",
     "favoritesTitle": "Favorite Movies",
     "historyTitle": "Watch History",
@@ -305,7 +306,7 @@
   },
   "welcome": {
     "title": "Quick tip",
-    "body": "PMQMovies pulls titles from multiple sources — if you can't find your movie in the catalog, use the",
+    "body": "Không Gian Phim pulls titles from multiple sources — if you can't find your movie in the catalog, use the",
     "searchBtn": "Search",
     "bodyTail": "icon in the top-right; we'll query both catalogs to give you the best match.",
     "gotIt": "Got it, thanks!"

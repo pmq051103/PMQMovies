@@ -5,7 +5,7 @@ import { FaPlay, FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
-import { getImageUrl, truncateText } from "@/utils";
+import { getMoviePoster, truncateText, onImgError } from "@/utils";
 import type { MovieListItem } from "@/types";
 
 interface MovieCarouselProps {
@@ -130,11 +130,12 @@ const MovieCarousel: React.FC<MovieCarouselProps> = ({ movies, title }) => {
                   {/* Thumbnail — landscape 16:9 */}
                   <div className="relative aspect-video overflow-hidden">
                     <img
-                      src={getImageUrl(movie.thumb_url)}
+                      src={getMoviePoster(movie.thumb_url, movie.poster_url)}
                       alt={movie.name}
                       loading="lazy"
                       decoding="async"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={onImgError}
                     />
 
                     {/* Hover overlay */}

@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { useFavoriteStore } from '@/store';
 import { EmptyState } from '@/components/common';
 import { ROUTES } from '@/constants';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 
 export default function FavoritesPage() {
   const { t } = useTranslation();
@@ -51,10 +51,11 @@ export default function FavoritesPage() {
                     className="relative block aspect-[2/3] overflow-hidden rounded-lg bg-gray-900"
                   >
                     <img
-                      src={getImageUrl(movie.poster_url) || getImageUrl(movie.thumb_url)}
+                      src={getMoviePoster(movie.poster_url, movie.thumb_url)}
                       alt={movie.name}
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={onImgError}
                     />
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

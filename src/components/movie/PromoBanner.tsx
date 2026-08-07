@@ -4,7 +4,7 @@ import { FaPlay, FaStar, FaInfoCircle } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 interface PromoBannerProps {
@@ -39,7 +39,7 @@ const PromoBanner: React.FC<PromoBannerProps> = ({ movie, accent = 'red' }) => {
     ? parseFloat(String(movie.tmdb.vote_average))
     : null;
 
-  const imgSrc = getImageUrl(movie.thumb_url) || getImageUrl(movie.poster_url);
+  const imgSrc = getMoviePoster(movie.thumb_url, movie.poster_url);
   const categories = (movie as any).category as
     | { name: string; slug: string }[]
     | undefined;
@@ -53,6 +53,7 @@ const PromoBanner: React.FC<PromoBannerProps> = ({ movie, accent = 'red' }) => {
           alt={movie.name}
           loading="lazy"
           className="h-full w-full object-cover"
+          onError={onImgError}
         />
 
         {/* Gradient overlays */}

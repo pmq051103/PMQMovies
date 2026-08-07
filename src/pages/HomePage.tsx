@@ -15,7 +15,7 @@ import PromoBanner from '@/components/movie/PromoBanner';
 import { useHistoryStore } from '@/store';
 import { useLatestMovies, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 /* -------------------------------------------------------------------------- */
@@ -86,6 +86,8 @@ export default function HomePage() {
 
   /* ── Data feeds ── */
   const { data: latestData } = useLatestMovies(1);
+  const { data: latestPage2 } = useLatestMovies(2);
+  const { data: latestPage3 } = useLatestMovies(3);
   const { data: singleMovies } = useMoviesBySlug('phim-le', { page: 1 });
   const { data: tvShows } = useMoviesBySlug('phim-bo', { page: 1 });
   const { data: anime } = useMoviesBySlug('hoat-hinh', { page: 1 });
@@ -141,15 +143,31 @@ export default function HomePage() {
     [history],
   );
 
+  // Latest updated movies — API already sorts by modified.time desc,
+  // so page 1 items ARE the most recently updated. Skip the first 11
+  // (used by hero banner + spotlight) to avoid duplication.
+  const latestUpdatedItems = useMemo(
+    () => latestData?.items.slice(11) ?? [],
+    [latestData],
+  );
+
+  // Movies updated TODAY — filter across 3 pages (~72 items) by modified date
   const updatedTodayItems = useMemo(() => {
-    if (!latestData?.items) return [];
+    const all = [
+      ...(latestData?.items ?? []),
+      ...(latestPage2?.items ?? []),
+      ...(latestPage3?.items ?? []),
+    ];
     const today = new Date().toISOString().slice(0, 10);
-    return latestData.items.filter((m: any) => {
+    const seen = new Set<string>();
+    return all.filter((m: any) => {
+      if (!m?.slug || seen.has(m.slug)) return false;
+      seen.add(m.slug);
       const modTime = m.modified?.time;
       if (!modTime) return false;
       return new Date(modTime).toISOString().slice(0, 10) === today;
     });
-  }, [latestData]);
+  }, [latestData, latestPage2, latestPage3]);
 
   const spotlightItems = useMemo(
     () => latestData?.items.slice(6, 11) ?? [],
@@ -221,10 +239,11 @@ export default function HomePage() {
                   >
                     <div className="relative aspect-[2/3] w-32 overflow-hidden rounded-lg bg-gray-900 sm:w-40">
                       <img
-                        src={getImageUrl(item.poster_url) || getImageUrl(item.thumb_url)}
+                        src={getMoviePoster(item.poster_url, item.thumb_url)}
                         alt={item.name}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onError={onImgError}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
@@ -256,6 +275,17 @@ export default function HomePage() {
             </motion.section>
           )}
 
+          {/* ── Phim Mới Cập Nhật Hôm Nay — lọc đúng ngày hôm nay ── */}
+          {updatedTodayItems.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <SectionGrid
+                title={t('home.newToday', 'Phim Mới Cập Nhật Hôm Nay')}
+                movies={updatedTodayItems}
+                limit={12}
+              />
+            </motion.section>
+          )}
+
           {/* ── BOOM BANNER 1 — Chiếu rạp hot ── */}
           {nowPlayingData?.items && nowPlayingData.items.length > 0 && (
             <motion.section variants={itemVariants}>
@@ -264,11 +294,11 @@ export default function HomePage() {
           )}
 
           {/* ── Phim Mới Cập Nhật Hôm Nay — Grid ── */}
-          {updatedTodayItems.length > 0 && (
+          {latestUpdatedItems.length > 0 && (
             <motion.section variants={itemVariants}>
               <SectionGrid
-                title={t('home.updatedToday', 'Phim Mới Cập Nhật Hôm Nay')}
-                movies={updatedTodayItems}
+                title={t('home.updatedToday', 'Mới Cập Nhật')}
+                movies={latestUpdatedItems}
                 limit={12}
               />
             </motion.section>
@@ -474,6 +504,41 @@ export default function HomePage() {
               />
             </motion.section>
           )}
+
+          {/* ── Hướng Dẫn & FAQ (SEO) ── */}
+          <motion.section variants={itemVariants} className="mt-8">
+            <div className="rounded-2xl border border-gray-800 bg-gray-900/50 p-6 sm:p-8">
+              <h2 className="mb-6 text-xl font-bold text-white sm:text-2xl">
+                Hướng Dẫn Xem Phim Tại Không Gian Phim
+              </h2>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-red-500">Làm sao để xem phim?</h3>
+                  <p className="text-sm leading-relaxed text-gray-400">
+                    Chọn phim bạn muốn xem, bấm vào poster hoặc tên phim để vào trang chi tiết. Sau đó bấm nút "Xem Ngay" để bắt đầu xem. Nếu máy chủ 1 không hoạt động, hãy chuyển sang máy chủ khác.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-red-500">Phim không tải được?</h3>
+                  <p className="text-sm leading-relaxed text-gray-400">
+                    Hãy thử đổi máy chủ (Server) khác. Không Gian Phim tổng hợp nhiều nguồn phim nên luôn có máy chủ dự phòng cho bạn.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-red-500">Tìm phim như thế nào?</h3>
+                  <p className="text-sm leading-relaxed text-gray-400">
+                    Bấm vào icon kính lúp trên thanh header để tìm kiếm theo tên phim. Hoặc duyệt theo thể loại, quốc gia, phim chiếu rạp từ menu điều hướng.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-red-500">Lưu phim yêu thích?</h3>
+                  <p className="text-sm leading-relaxed text-gray-400">
+                    Bấm vào icon trái tim ở trang chi tiết phim để lưu vào danh sách yêu thích. Truy cập nhanh từ icon ❤️ trên thanh header.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.section>
         </motion.div>
       </div>
     </>

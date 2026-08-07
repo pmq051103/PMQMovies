@@ -5,16 +5,35 @@ import { IMAGE_BASE_URL } from '@/constants';
 /* Image URL                                                           */
 /* ------------------------------------------------------------------ */
 
+/** Placeholder poster for movies with no image from API. */
+export const PLACEHOLDER_POSTER = '/placeholder-poster.svg';
+
+/** onError handler for <img> — swaps to placeholder on broken image. */
+export function onImgError(e: React.SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  if (img.src !== PLACEHOLDER_POSTER && !img.src.endsWith('placeholder-poster.svg')) {
+    img.src = PLACEHOLDER_POSTER;
+  }
+}
+
 /**
  * Resolves a poster or thumbnail path to a full URL.
- * If the path is already an absolute URL it is returned as-is;
- * otherwise the CDN base URL (from `@/constants`) is prepended.
+ * Returns empty string for invalid paths — use `getMoviePoster`
+ * for automatic placeholder fallback.
  */
 export function getImageUrl(path: unknown): string {
-  // Defensive — upstream sometimes returns `{}` or `null` for image fields.
   if (typeof path !== 'string' || path.length === 0) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   return `${IMAGE_BASE_URL}/${path.replace(/^\//, '')}`;
+}
+
+/**
+ * Returns the best available image for a movie, falling back to the
+ * placeholder SVG if neither poster nor thumb is available.
+ * Use this wherever you display a movie poster/thumbnail.
+ */
+export function getMoviePoster(posterUrl: unknown, thumbUrl?: unknown): string {
+  return getImageUrl(posterUrl) || getImageUrl(thumbUrl) || PLACEHOLDER_POSTER;
 }
 
 /* ------------------------------------------------------------------ */

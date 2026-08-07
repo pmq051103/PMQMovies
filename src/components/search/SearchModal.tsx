@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useDebounce } from '@/hooks';
 import { useSearchMovies } from '@/hooks/useMovies';
 import { useSearchStore } from '@/store/useSearchStore';
-import { getImageUrl } from '@/utils';
+import { getMoviePoster } from '@/utils';
 import { ROUTES } from '@/constants';
 
 interface SearchModalProps {
@@ -220,7 +220,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
             {showResults && !isLoading && items.length > 0 && (
               <div className="py-1">
                 {items.slice(0, 10).map((movie) => {
-                  const posterSrc = getImageUrl(movie.poster_url);
+                  const posterSrc = getMoviePoster(movie.poster_url, movie.thumb_url);
                   return (
                     <button
                       key={movie._id}

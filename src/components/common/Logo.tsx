@@ -32,12 +32,16 @@ export default function Logo({
     <span
       className={`relative inline-flex items-center select-none ${className}`}
       style={{ height: h }}
-      aria-label="PMQMovies"
+      aria-label="Không Gian Phim"
     >
       <motion.img
         src="/logo.png"
-        alt="PMQMovies"
-        style={{ height: h, width: "auto" }}
+        alt="Không Gian Phim"
+        style={{
+          height: h,
+          width: "auto",
+          filter: "drop-shadow(0 0 8px rgba(212,175,55,0.5)) drop-shadow(0 0 20px rgba(212,175,55,0.2))",
+        }}
         draggable={false}
         {...(animated
           ? {
@@ -85,7 +89,7 @@ export default function Logo({
     <Link
       to={ROUTES.HOME}
       className="flex-shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-      aria-label="PMQMovies — Trang chủ"
+      aria-label="Không Gian Phim — Trang chủ"
     >
       {inner}
     </Link>

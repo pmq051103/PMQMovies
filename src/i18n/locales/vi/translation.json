@@ -55,7 +55,8 @@
     "thuyetMinh": "Phim Thuyết Minh",
     "longTieng": "Phim Lồng Tiếng",
     "tvShowsCategory": "TV Shows",
-    "updatedToday": "Phim Mới Cập Nhật Hôm Nay",
+    "updatedToday": "Mới Cập Nhật",
+    "newToday": "Phim Mới Cập Nhật Hôm Nay",
     "nowPlaying": "Phim Chiếu Rạp",
     "topMustWatch": "Top Phim Đáng Xem",
     "topNowPlaying": "Top 10 Chiếu Rạp",
@@ -282,7 +283,7 @@
     "emailPlaceholder": "Nhập email của bạn",
     "phone": "Điện Thoại",
     "donate": "Ủng hộ",
-    "donateCta": "Ủng hộ PMQMovies"
+    "donateCta": "Ủng hộ Không Gian Phim"
   },
   "episode": {
     "server": "Máy Chủ",
@@ -290,8 +291,8 @@
     "noEpisodes": "Không có tập phim nào"
   },
   "seo": {
-    "homeTitle": "Xem Phim Online - Phim Mới Cập Nhật",
-    "homeDescription": "Xem phim online miễn phí, phim lẻ, phim bộ, hoạt hình mới nhất với chất lượng cao",
+    "homeTitle": "Không Gian Phim - Xem Phim Online",
+    "homeDescription": "Xem phim online miễn phí, phim lẻ, phim bộ, hoạt hình mới nhất với chất lượng cao tại Không Gian Phim",
     "moviesTitle": "Phim Lẻ - Xem Phim Lẻ Online",
     "tvShowsTitle": "Phim Bộ - Xem Phim Bộ Online",
     "searchTitle": "Tìm Kiếm Phim",
@@ -305,7 +306,7 @@
   },
   "welcome": {
     "title": "Mẹo cho bạn",
-    "body": "PMQMovies lấy phim từ nhiều nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng",
+    "body": "Không Gian Phim lấy phim từ nhiều nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng",
     "searchBtn": "Tìm kiếm",
     "bodyTail": "ở góc trên phải — chúng tôi sẽ tìm ở cả nhiều kho phim để trả kết quả tốt nhất.",
     "gotIt": "Đã hiểu, cảm ơn!"

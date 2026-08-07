@@ -5,7 +5,7 @@ import { FaPlay, FaFilm, FaStar } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getImageUrl } from '@/utils';
+import { getImageUrl, getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 export interface MovieCardProps {
@@ -18,7 +18,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const posterSrc = getImageUrl(movie.poster_url);
+  const posterSrc = getMoviePoster(movie.poster_url, movie.thumb_url);
   const rating = movie.tmdb?.vote_average
     ? parseFloat(String(movie.tmdb.vote_average))
     : null;
@@ -48,20 +48,14 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
       >
         {/* Poster — aspect ratio 2:3 */}
         <div className="relative aspect-[2/3] w-full overflow-hidden">
-          {imageError || !posterSrc ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-              <FaFilm className="text-5xl text-gray-600" />
-            </div>
-          ) : (
-            <img
-              src={posterSrc}
-              alt={movie.name}
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-              onError={() => setImageError(true)}
-            />
-          )}
+          <img
+            src={posterSrc}
+            alt={movie.name}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={onImgError}
+          />
 
           {/* Hover overlay with centered play button */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
