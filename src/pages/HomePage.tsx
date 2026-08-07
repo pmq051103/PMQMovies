@@ -144,13 +144,6 @@ export default function HomePage() {
     [history],
   );
 
-  // Latest updated movies — API already sorts by modified.time desc,
-  // so page 1 items ARE the most recently updated. Skip the first 11
-  // (used by hero banner + spotlight) to avoid duplication.
-  const latestUpdatedItems = useMemo(
-    () => latestData?.items.slice(11) ?? [],
-    [latestData],
-  );
 
   // Movies updated TODAY — filter across 3 pages (~72 items) by modified date
   const updatedTodayItems = useMemo(() => {
