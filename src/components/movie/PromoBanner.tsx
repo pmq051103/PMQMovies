@@ -1,10 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPlay, FaStar, FaInfoCircle } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getMoviePoster, onImgError } from '@/utils';
+import { getMoviePoster } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 interface PromoBannerProps {
@@ -35,6 +35,14 @@ const btnAccentMap = {
  */
 const PromoBanner: React.FC<PromoBannerProps> = ({ movie, accent = 'red' }) => {
   const { t } = useTranslation();
+  const [imgFailed, setImgFailed] = useState(false);
+
+  // Don't render banner if movie has no image or image failed to load
+  const hasRealImage =
+    (typeof movie.thumb_url === 'string' && movie.thumb_url.length > 0) ||
+    (typeof movie.poster_url === 'string' && movie.poster_url.length > 0);
+  if (!hasRealImage || imgFailed) return null;
+
   const rating = movie.tmdb?.vote_average
     ? parseFloat(String(movie.tmdb.vote_average))
     : null;
@@ -53,7 +61,7 @@ const PromoBanner: React.FC<PromoBannerProps> = ({ movie, accent = 'red' }) => {
           alt={movie.name}
           loading="lazy"
           className="h-full w-full object-cover"
-          onError={onImgError}
+          onError={() => setImgFailed(true)}
         />
 
         {/* Gradient overlays */}

@@ -106,7 +106,11 @@ export default function MoviesPage() {
     <>
       <Helmet>
         <title>{t('seo.moviesTitle')}</title>
-        <meta name="description" content={t('seo.moviesTitle')} />
+        <meta name="description" content="Phim lẻ mới nhất, phim lẻ hay, xem phim lẻ online miễn phí chất lượng cao tại Không Gian Phim. Vietsub, Thuyết minh, Lồng tiếng." />
+        <meta property="og:title" content={t('seo.moviesTitle')} />
+        <meta property="og:description" content="Phim lẻ mới nhất, phim lẻ hay, xem phim lẻ online miễn phí chất lượng cao." />
+        <meta property="og:url" content="https://khonggianphim.com/phim-le" />
+        <link rel="canonical" href="https://khonggianphim.com/phim-le" />
       </Helmet>
 
       <motion.div
@@ -225,7 +229,7 @@ export default function MoviesPage() {
                         <div className="mb-8">
                           <SpotlightGrid
                             title={t('nav.movies')}
-                            movies={displayMovies.slice(0, 5)}
+                            movies={displayMovies.slice(0, 8)}
                           />
                         </div>
                       )}

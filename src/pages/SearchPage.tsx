@@ -120,6 +120,10 @@ export default function SearchPage() {
     <>
       <Helmet>
         <title>{t('seo.searchTitle')}</title>
+        <meta name="description" content="Tìm kiếm phim tại Không Gian Phim — tìm phim lẻ, phim bộ, phim chiếu rạp theo tên." />
+        <meta property="og:title" content={t('seo.searchTitle')} />
+        <meta property="og:url" content="https://khonggianphim.com/tim-kiem" />
+        <link rel="canonical" href="https://khonggianphim.com/tim-kiem" />
       </Helmet>
 
       <motion.div

@@ -1,11 +1,11 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaStar, FaPlay, FaChevronRight } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
-import { getImageUrl, getMoviePoster, onImgError } from "@/utils";
+import { getMoviePoster } from "@/utils";
 import type { MovieListItem } from "@/types";
 
 interface SpotlightGridProps {
@@ -28,9 +28,17 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
   viewAllLink,
 }) => {
   const { t } = useTranslation();
-  const items = movies.slice(0, 5);
+  const [failedSlugs, setFailedSlugs] = useState<Set<string>>(new Set());
+
+  // Filter out movies whose images failed (CDN 404), then take first 5
+  const available = movies.slice(0, 7).filter((m) => !failedSlugs.has(m.slug));
+  const items = available.slice(0, 5);
   if (items.length < 5) return null;
   const [hero, ...rest] = items;
+
+  const handleImgError = (slug: string) => {
+    setFailedSlugs((prev) => new Set(prev).add(slug));
+  };
   const heroRating = hero.tmdb?.vote_average
     ? parseFloat(String(hero.tmdb.vote_average))
     : null;
@@ -62,7 +70,7 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
             alt={hero.name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={onImgError}
+            onError={() => handleImgError(hero.slug)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
 
@@ -117,7 +125,7 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
                   alt={m.name}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  onError={onImgError}
+                  onError={() => handleImgError(m.slug)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-3">

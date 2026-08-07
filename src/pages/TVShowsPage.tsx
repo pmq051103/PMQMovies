@@ -102,7 +102,11 @@ export default function TVShowsPage() {
     <>
       <Helmet>
         <title>{t('seo.tvShowsTitle')}</title>
-        <meta name="description" content={t('seo.tvShowsTitle')} />
+        <meta name="description" content="Phim bộ mới nhất, phim bộ hay, xem phim bộ online miễn phí tại Không Gian Phim. Vietsub, Thuyết minh, Lồng tiếng." />
+        <meta property="og:title" content={t('seo.tvShowsTitle')} />
+        <meta property="og:description" content="Phim bộ mới nhất, phim bộ hay, xem phim bộ online miễn phí." />
+        <meta property="og:url" content="https://khonggianphim.com/phim-bo" />
+        <link rel="canonical" href="https://khonggianphim.com/phim-bo" />
       </Helmet>
 
       <motion.div
@@ -220,7 +224,7 @@ export default function TVShowsPage() {
                         <div className="mb-8">
                           <SpotlightGrid
                             title={t('nav.tvShows')}
-                            movies={displayMovies.slice(0, 5)}
+                            movies={displayMovies.slice(0, 8)}
                           />
                         </div>
                       )}

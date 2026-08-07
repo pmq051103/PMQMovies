@@ -131,12 +131,40 @@ export default function MovieDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{movie.name}</title>
+        <title>{`${movie.name}${movie.origin_name && movie.origin_name !== movie.name ? ` (${movie.origin_name})` : ''} - Không Gian Phim`}</title>
         <meta name="description" content={seoDescription} />
         <meta property="og:title" content={movie.name} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:image" content={posterUrl} />
         <meta property="og:type" content="video.movie" />
+        <meta property="og:url" content={`https://khonggianphim.com/phim/${movie.slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.com/phim/${movie.slug}`} />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "VideoObject",
+            "name": movie.name,
+            "alternateName": movie.origin_name || undefined,
+            "description": seoDescription,
+            "thumbnailUrl": posterUrl,
+            "uploadDate": (movie as any).modified?.time || new Date().toISOString(),
+            "duration": movie.time ? `PT${parseInt(movie.time) || 0}M` : undefined,
+            "aggregateRating": (movie as any).tmdb?.vote_average > 0 ? {
+              "@type": "AggregateRating",
+              "ratingValue": (movie as any).tmdb.vote_average,
+              "bestRating": 10,
+              "ratingCount": (movie as any).tmdb.vote_count || 1
+            } : undefined,
+            "genre": (movie as any).category?.map((c: any) => c.name) || [],
+            "countryOfOrigin": (movie as any).country?.map((c: any) => c.name) || [],
+            "datePublished": movie.year > 0 ? String(movie.year) : undefined,
+            "url": `https://khonggianphim.com/phim/${movie.slug}`,
+            "potentialAction": {
+              "@type": "WatchAction",
+              "target": `https://khonggianphim.com/xem/${movie.slug}`
+            }
+          })}
+        </script>
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 text-white">

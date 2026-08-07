@@ -191,7 +191,10 @@ function CountryDetailView({ slug }: { slug: string }) {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <Helmet>
         <title>{`${countryName} - ${t('seo.countriesTitle')}`}</title>
-        <meta name="description" content={`${countryName} - ${t('seo.countriesTitle')}`} />
+        <meta name="description" content={`Phim ${countryName} — xem phim online miễn phí tại Không Gian Phim.`} />
+        <meta property="og:title" content={`${countryName} - ${t('seo.countriesTitle')}`} />
+        <meta property="og:url" content={`https://khonggianphim.com/quoc-gia/${slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.com/quoc-gia/${slug}`} />
       </Helmet>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -254,7 +257,7 @@ function CountryDetailView({ slug }: { slug: string }) {
             <div className="mb-8">
               <SpotlightGrid
                 title={countryName}
-                movies={displayMovies.slice(0, 5)}
+                movies={displayMovies.slice(0, 8)}
               />
             </div>
           )}
@@ -292,7 +295,10 @@ export default function CountryPage() {
       {!slug && (
         <Helmet>
           <title>{t('seo.countriesTitle')}</title>
-          <meta name="description" content={t('seo.countriesTitle')} />
+          <meta name="description" content="Danh sách phim theo quốc gia tại Không Gian Phim — Hàn Quốc, Trung Quốc, Mỹ, Nhật Bản và nhiều hơn nữa." />
+          <meta property="og:title" content={t('seo.countriesTitle')} />
+          <meta property="og:url" content="https://khonggianphim.com/quoc-gia" />
+          <link rel="canonical" href="https://khonggianphim.com/quoc-gia" />
         </Helmet>
       )}
 

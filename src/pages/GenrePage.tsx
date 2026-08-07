@@ -198,7 +198,10 @@ function GenreDetailView({ slug }: { slug: string }) {
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <Helmet>
         <title>{`${genreName} - ${t('seo.genresTitle')}`}</title>
-        <meta name="description" content={`${genreName} - ${t('seo.genresTitle')}`} />
+        <meta name="description" content={`Phim thể loại ${genreName} — xem phim online miễn phí tại Không Gian Phim.`} />
+        <meta property="og:title" content={`${genreName} - ${t('seo.genresTitle')}`} />
+        <meta property="og:url" content={`https://khonggianphim.com/the-loai/${slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.com/the-loai/${slug}`} />
       </Helmet>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -267,7 +270,7 @@ function GenreDetailView({ slug }: { slug: string }) {
             <div className="mb-8">
               <SpotlightGrid
                 title={genreName}
-                movies={displayMovies.slice(0, 5)}
+                movies={displayMovies.slice(0, 8)}
               />
             </div>
           )}
@@ -313,7 +316,10 @@ export default function GenrePage() {
       {!slug && (
         <Helmet>
           <title>{t('seo.genresTitle')}</title>
-          <meta name="description" content={t('seo.genresTitle')} />
+          <meta name="description" content="Danh sách thể loại phim tại Không Gian Phim — hành động, tình cảm, kinh dị, hoạt hình và nhiều hơn nữa." />
+          <meta property="og:title" content={t('seo.genresTitle')} />
+          <meta property="og:url" content="https://khonggianphim.com/the-loai" />
+          <link rel="canonical" href="https://khonggianphim.com/the-loai" />
         </Helmet>
       )}
 

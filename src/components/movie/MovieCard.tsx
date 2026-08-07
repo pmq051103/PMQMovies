@@ -1,11 +1,11 @@
 import { useState, memo } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlay, FaFilm, FaStar } from 'react-icons/fa';
+import { FaPlay, FaStar } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getImageUrl, getMoviePoster, onImgError } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 export interface MovieCardProps {
@@ -15,7 +15,6 @@ export interface MovieCardProps {
 
 const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
   const { t: _t } = useTranslation();
-  const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const posterSrc = getMoviePoster(movie.poster_url, movie.thumb_url);

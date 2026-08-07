@@ -108,7 +108,11 @@ export default function NowPlayingPage() {
     <>
       <Helmet>
         <title>{t('seo.nowPlayingTitle')}</title>
-        <meta name="description" content={t('seo.nowPlayingTitle')} />
+        <meta name="description" content="Phim chiếu rạp mới nhất 2026, phim rạp hay, xem phim chiếu rạp online miễn phí tại Không Gian Phim." />
+        <meta property="og:title" content={t('seo.nowPlayingTitle')} />
+        <meta property="og:description" content="Phim chiếu rạp mới nhất, xem online miễn phí chất lượng cao." />
+        <meta property="og:url" content="https://khonggianphim.com/phim-chieu-rap" />
+        <link rel="canonical" href="https://khonggianphim.com/phim-chieu-rap" />
       </Helmet>
 
       <motion.div
@@ -227,7 +231,7 @@ export default function NowPlayingPage() {
                         <div className="mb-8">
                           <SpotlightGrid
                             title={t('nav.nowPlaying')}
-                            movies={displayMovies.slice(0, 5)}
+                            movies={displayMovies.slice(0, 8)}
                           />
                         </div>
                       )}

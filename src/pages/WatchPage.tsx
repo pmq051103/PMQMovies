@@ -17,7 +17,7 @@ import { EpisodeList, MovieRow } from '@/components/movie';
 import { ROUTES } from '@/constants';
 import { useMovieDetail, useMoviesInGenre } from '@/hooks';
 import { usePlayerStore, useHistoryStore } from '@/store';
-import { getImageUrl, getMoviePoster } from '@/utils';
+import { getMoviePoster } from '@/utils';
 import type { Episode } from '@/types';
 
 /* ------------------------------------------------------------------ */
@@ -404,6 +404,8 @@ export default function WatchPage() {
           content={`${movie.name}${currentEpisodeData ? ` - ${currentEpisodeData.name}` : ''}`}
         />
         <meta property="og:image" content={getMoviePoster(movie.thumb_url, movie.poster_url)} />
+        <meta property="og:url" content={`https://khonggianphim.com/xem/${slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.com/xem/${slug}`} />
       </Helmet>
 
       {/* Cinema mode backdrop — full-viewport dark surface. Clicking it

@@ -5,7 +5,7 @@ import { FaPlay, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getMoviePoster, onImgError } from '@/utils';
+import { getMoviePoster } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 interface HeroBannerProps {
@@ -34,9 +34,18 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
   const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [failedSlugs, setFailedSlugs] = useState<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const slides = movies.slice(0, MAX_SLIDES);
+  // Filter out slides with empty URLs AND slides whose images failed to load
+  const slides = movies
+    .filter((m) =>
+      !failedSlugs.has(m.slug) && (
+        (typeof m.thumb_url === 'string' && m.thumb_url.length > 0) ||
+        (typeof m.poster_url === 'string' && m.poster_url.length > 0)
+      )
+    )
+    .slice(0, MAX_SLIDES);
 
   const clearAutoplay = useCallback(() => {
     if (intervalRef.current) {
@@ -103,7 +112,10 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
             alt={current.name}
             className="h-full w-full object-cover"
             loading={currentIndex === 0 ? 'eager' : 'lazy'}
-            onError={onImgError}
+            onError={() => {
+              // Mark this slide as failed → it gets filtered out, auto-advances
+              setFailedSlugs((prev) => new Set(prev).add(current.slug));
+            }}
           />
         </motion.div>
       </AnimatePresence>

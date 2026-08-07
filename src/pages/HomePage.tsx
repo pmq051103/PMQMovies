@@ -170,27 +170,27 @@ export default function HomePage() {
   }, [latestData, latestPage2, latestPage3]);
 
   const spotlightItems = useMemo(
-    () => latestData?.items.slice(6, 11) ?? [],
+    () => latestData?.items.slice(6, 14) ?? [],
     [latestData],
   );
 
   const nowPlayingSpotlight = useMemo(
-    () => nowPlayingData?.items?.slice(0, 5) ?? [],
+    () => nowPlayingData?.items?.slice(0, 8) ?? [],
     [nowPlayingData],
   );
 
   const animeSpotlight = useMemo(
-    () => anime?.items?.slice(0, 5) ?? [],
+    () => anime?.items?.slice(0, 8) ?? [],
     [anime],
   );
 
   const vietCinemaSpotlight = useMemo(
-    () => topVietCinema?.items?.slice(0, 5) ?? [],
+    () => topVietCinema?.items?.slice(0, 8) ?? [],
     [topVietCinema],
   );
 
   const blockbusterSpotlight = useMemo(
-    () => blockbusterData?.items?.slice(0, 5) ?? [],
+    () => blockbusterData?.items?.slice(0, 8) ?? [],
     [blockbusterData],
   );
 
@@ -266,7 +266,7 @@ export default function HomePage() {
           )}
 
           {/* ── Phim Đề Cử — Spotlight (1 big + 4 small) ── */}
-          {spotlightItems.length === 5 && (
+          {spotlightItems.length >= 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
                 title={t('home.spotlight', 'Phim đề cử')}
@@ -305,7 +305,7 @@ export default function HomePage() {
           )}
 
           {/* ── Phim Chiếu Rạp — Spotlight (1 big + 4 small) ── */}
-          {nowPlayingSpotlight.length === 5 && (
+          {nowPlayingSpotlight.length >= 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
                 title={t('home.nowPlaying', 'Phim Chiếu Rạp')}
@@ -316,7 +316,7 @@ export default function HomePage() {
           )}
 
           {/* ── Phim Bom Tấn — Spotlight ── */}
-          {blockbusterSpotlight.length === 5 && (
+          {blockbusterSpotlight.length >= 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
                 title={t('home.blockbuster', 'Phim Bom Tấn')}
@@ -351,7 +351,7 @@ export default function HomePage() {
           )}
 
           {/* ── Phim Việt Chiếu Rạp — Spotlight ── */}
-          {vietCinemaSpotlight.length === 5 && (
+          {vietCinemaSpotlight.length >= 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
                 title={t('home.topVietCinema', 'Phim Việt Chiếu Rạp')}
@@ -430,7 +430,7 @@ export default function HomePage() {
           )}
 
           {/* ── Anime — Spotlight (1 big + 4 small) ── */}
-          {animeSpotlight.length === 5 && (
+          {animeSpotlight.length >= 5 && (
             <motion.section variants={itemVariants}>
               <SpotlightGrid
                 title={t('home.anime')}
