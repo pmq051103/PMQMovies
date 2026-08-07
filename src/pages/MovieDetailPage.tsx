@@ -73,6 +73,12 @@ export default function MovieDetailPage() {
       tmdb: movie.tmdb,
       imdb: movie.imdb,
       modified: movie.modified,
+      episode_current: movie.episode_current ?? '',
+      episode_total: movie.episode_total ?? '',
+      quality: movie.quality ?? '',
+      lang: movie.lang ?? '',
+      type: movie.type ?? '',
+      chieurap: movie.chieurap ?? false,
     };
   }, [movie]);
 
