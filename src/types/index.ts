@@ -75,6 +75,12 @@ export interface MovieListItem {
   poster_url: string;
   thumb_url: string;
   year: number;
+  episode_current: string;
+  episode_total: string;
+  quality: string;
+  lang: string;
+  type: string;
+  chieurap: boolean;
 }
 
 /** Alias kept for readability in components that just render a "movie card". */
