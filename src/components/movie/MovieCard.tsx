@@ -22,6 +22,25 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
     ? parseFloat(String(movie.tmdb.vote_average))
     : null;
 
+  // Format episode badge: "Hoàn Tất (24/24)" → "24/24", "Tập 12" + total "32" → "12/32", "Full" → "Full"
+  const episodeBadge = (() => {
+    const ep = movie.episode_current;
+    if (!ep) return '';
+    // "Hoàn Tất (24/24)" or "Hoàn Tất(24/24)"
+    const match = ep.match(/(\d+)\s*\/\s*(\d+)/);
+    if (match) return `${match[1]}/${match[2]}`;
+    // "Tập 12" + episode_total
+    const tapMatch = ep.match(/[Tt]ập\s*(\d+)/);
+    if (tapMatch) {
+      const current = tapMatch[1];
+      const total = (movie as any).episode_total;
+      if (total && total !== '?' && total !== '0') return `${current}/${total}`;
+      return `Tập ${current}`;
+    }
+    if (ep === 'Full') return 'Full';
+    return ep;
+  })();
+
   // When the movie came from vsmov (dual-source search), append
   // ?src=vsmov so the detail page loads the correct film even when
   // both APIs have different movies under the same slug.
@@ -63,17 +82,38 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
             </div>
           </div>
 
-          {/* Badges */}
-          <div className="absolute left-2 top-2 flex gap-1.5">
-            {movie.year > 0 && (
-              <span className="rounded bg-gray-900/80 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-                {movie.year}
+          {/* Top-left badges: year + rating */}
+          <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
+            {movie.quality && (
+              <span className="w-fit rounded bg-red-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                {movie.quality}
               </span>
             )}
-            {rating !== null && rating > 0 && (
-              <span className="flex items-center gap-0.5 rounded bg-yellow-600/90 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-                <FaStar className="h-2.5 w-2.5" />
-                {rating.toFixed(1)}
+            {movie.lang && (
+              <span className="w-fit rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                {movie.lang}
+              </span>
+            )}
+          </div>
+
+          {/* Top-right badge: rating */}
+          {rating !== null && rating > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded bg-yellow-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <FaStar className="h-2 w-2" />
+              {rating.toFixed(1)}
+            </span>
+          )}
+
+          {/* Bottom-left badge: episode count */}
+          <div className="absolute bottom-1.5 left-1.5 flex gap-1">
+            {episodeBadge && (
+              <span className="rounded bg-green-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                {episodeBadge}
+              </span>
+            )}
+            {movie.year > 0 && (
+              <span className="rounded bg-gray-900/80 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                {movie.year}
               </span>
             )}
           </div>

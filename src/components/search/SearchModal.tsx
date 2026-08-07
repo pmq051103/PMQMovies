@@ -280,7 +280,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                 onClick={handleViewAll}
                 className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-red-400"
               >
-                <span>{t('search.pressEnterHint', 'Xem tat ca ket qua')}</span>
+                <span>{t('search.pressEnterHint', 'Xem tất cả kết quả')}</span>
                 <kbd className="rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">
                   Enter
                 </kbd>

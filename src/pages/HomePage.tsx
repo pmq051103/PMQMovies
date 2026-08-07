@@ -12,6 +12,7 @@ import {
   TopRankingRow,
 } from '@/components/movie';
 import PromoBanner from '@/components/movie/PromoBanner';
+import Sidebar from '@/components/movie/Sidebar';
 import { useHistoryStore } from '@/store';
 import { useLatestMovies, useMoviesBySlug } from '@/hooks';
 import { ROUTES } from '@/constants';
@@ -207,8 +208,11 @@ export default function HomePage() {
       <div className="min-h-screen bg-gray-950 text-white">
         {heroBannerMovies.length > 0 && <HeroBanner movies={heroBannerMovies} />}
 
+        <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex gap-8">
+        {/* Main content */}
         <motion.div
-          className="mx-auto max-w-7xl space-y-14 px-4 py-10 sm:px-6 lg:px-8"
+          className="min-w-0 flex-1 space-y-14"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -540,6 +544,14 @@ export default function HomePage() {
             </div>
           </motion.section>
         </motion.div>
+
+        {/* Right sidebar — top rated + trending */}
+        <Sidebar
+          topRated={topRatedData?.items}
+          trending={topMoviesByViews?.items}
+        />
+        </div>
+        </div>
       </div>
     </>
   );
