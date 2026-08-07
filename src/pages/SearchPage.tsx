@@ -144,7 +144,7 @@ export default function SearchPage() {
         animate="visible"
         className="min-h-screen bg-gray-950 text-white"
       >
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
           {/* Search header */}
           <div className="mx-auto max-w-2xl">
             <form onSubmit={handleSubmit}>

@@ -13,6 +13,8 @@ interface EpisodeListProps {
   movieSlug: string;
   /** Compact mode = the version used in the WatchPage right sidebar. */
   compact?: boolean;
+  /** Source hint for vsmov movies — appended as ?src= to preserve correct source. */
+  preferSource?: string;
 }
 
 const EpisodeList: React.FC<EpisodeListProps> = ({
@@ -21,6 +23,7 @@ const EpisodeList: React.FC<EpisodeListProps> = ({
   currentServerName,
   movieSlug,
   compact = false,
+  preferSource,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -40,11 +43,12 @@ const EpisodeList: React.FC<EpisodeListProps> = ({
 
   const handleEpisodeClick = useCallback(
     (episodeSlug: string, serverName: string) => {
+      const srcParam = preferSource ? `&src=${preferSource}` : '';
       navigate(
-        `${ROUTES.WATCH}/${movieSlug}?tap=${episodeSlug}&sv=${encodeURIComponent(serverName)}`,
+        `${ROUTES.WATCH}/${movieSlug}?tap=${episodeSlug}&sv=${encodeURIComponent(serverName)}${srcParam}`,
       );
     },
-    [movieSlug, navigate],
+    [movieSlug, navigate, preferSource],
   );
 
   if (!episodes.length) return null;

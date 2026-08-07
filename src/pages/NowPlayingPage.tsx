@@ -121,7 +121,7 @@ export default function NowPlayingPage() {
         initial="hidden"
         animate="visible"
       >
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
           {/* Header + inline search */}
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold sm:text-3xl">{t('nav.nowPlaying')}</h1>

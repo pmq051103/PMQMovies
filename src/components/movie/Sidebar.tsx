@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { FaStar, FaEye, FaFire } from 'react-icons/fa';
+import { FaStar, FaFire } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
@@ -10,17 +10,18 @@ import type { MovieListItem } from '@/types';
 interface SidebarProps {
   topRated?: MovieListItem[];
   trending?: MovieListItem[];
+  hotWeekly?: MovieListItem[];
 }
 
 /**
  * Right sidebar for homepage — shows "Đánh giá cao" and "Phim hot"
  * ranked lists with small poster thumbnails, like motchille.tv.
  */
-const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [] }) => {
+const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [], hotWeekly = [] }) => {
   const { t } = useTranslation();
 
   return (
-    <aside className="hidden w-72 shrink-0 space-y-8 xl:block">
+    <aside className="space-y-8">
       {/* Top Rated */}
       {topRated.length > 0 && (
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
@@ -98,6 +99,59 @@ const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [] }) => {
         </div>
       )}
 
+      {/* Hot Trong Tuần */}
+      {hotWeekly.length > 0 && (
+        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
+            <span className="text-base">🔥</span>
+            Hot Trong Tuần
+          </h3>
+          <div className="space-y-3">
+            {hotWeekly.slice(0, 10).map((movie, idx) => {
+              const rating = movie.tmdb?.vote_average
+                ? parseFloat(String(movie.tmdb.vote_average))
+                : null;
+              return (
+                <Link
+                  key={movie.slug}
+                  to={`${ROUTES.MOVIE_DETAIL}/${movie.slug}`}
+                  className="group flex items-start gap-3 rounded-lg p-1 transition-colors hover:bg-white/5"
+                >
+                  <span className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs font-bold ${
+                    idx < 3 ? 'bg-gradient-to-br from-orange-500 to-red-600 text-white' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <div className="h-16 w-11 shrink-0 overflow-hidden rounded bg-gray-800">
+                    <img
+                      src={getMoviePoster(movie.poster_url, movie.thumb_url)}
+                      alt={movie.name}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      onError={onImgError}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-1 text-sm font-medium text-gray-200 group-hover:text-orange-400">
+                      {movie.name}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2 text-[10px] text-gray-500">
+                      {rating !== null && rating > 0 && (
+                        <span className="flex items-center gap-0.5 text-yellow-400">
+                          <FaStar className="h-2 w-2" />
+                          {rating.toFixed(1)}
+                        </span>
+                      )}
+                      {movie.year > 0 && <span>{movie.year}</span>}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Trending / Hot */}
       {trending.length > 0 && (
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
@@ -158,6 +212,7 @@ const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [] }) => {
           </div>
         </div>
       )}
+
     </aside>
   );
 };

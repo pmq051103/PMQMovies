@@ -60,7 +60,7 @@ function CountryListView() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-2xl font-bold sm:text-3xl">{t('nav.countries')}</h1>
         <GridSkeleton count={16} />
       </div>
@@ -68,7 +68,7 @@ function CountryListView() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-2xl font-bold sm:text-3xl">{t('nav.countries')}</h1>
 
       {countries.length === 0 ? (
@@ -188,7 +188,7 @@ function CountryDetailView({ slug }: { slug: string }) {
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
       <Helmet>
         <title>{`${countryName} - ${t('seo.countriesTitle')}`}</title>
         <meta name="description" content={`Phim ${countryName} — xem phim online miễn phí tại Không Gian Phim.`} />

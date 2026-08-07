@@ -181,7 +181,7 @@ export default function MovieDetailPage() {
         </div>
 
         {/* ---- Main content ---- */}
-        <div className="relative z-10 mx-auto -mt-48 max-w-7xl px-4 sm:-mt-64 sm:px-6 lg:-mt-80 lg:px-8">
+        <div className="relative z-10 mx-auto -mt-48 max-w-[1600px] px-4 sm:-mt-64 sm:px-6 lg:-mt-80 lg:px-8">
           <div className="flex flex-col gap-8 lg:flex-row">
             {/* Poster */}
             <motion.div
@@ -438,6 +438,7 @@ export default function MovieDetailPage() {
               <EpisodeList
                 episodes={episodes}
                 movieSlug={movie.slug}
+                preferSource={preferSource ?? undefined}
               />
             </motion.section>
           )}

@@ -193,12 +193,13 @@ export default function WatchPage() {
       if (!server) return;
       const ep = server.server_data[eIdx];
       if (!ep) return;
+      const srcParam = preferSource ? `&src=${preferSource}` : '';
       navigate(
-        `${ROUTES.WATCH}/${slug}?tap=${ep.slug}&sv=${encodeURIComponent(server.server_name)}`,
+        `${ROUTES.WATCH}/${slug}?tap=${ep.slug}&sv=${encodeURIComponent(server.server_name)}${srcParam}`,
         { replace: true },
       );
     },
-    [episodes, slug, navigate],
+    [episodes, slug, navigate, preferSource],
   );
 
   const hasPrevEpisode = episodeIndex > 0;
@@ -445,7 +446,7 @@ export default function WatchPage() {
         animate="visible"
         className="min-h-screen bg-gray-950 text-white"
       >
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
           {/* Main layout: player + sidebar */}
           <div className="flex flex-col gap-6 lg:flex-row">
             {/* Left column: player + controls */}
@@ -680,6 +681,7 @@ export default function WatchPage() {
                       currentEpisodeSlug={currentEpisodeData?.slug}
                       currentServerName={currentServer?.server_name}
                       movieSlug={movie.slug}
+                      preferSource={preferSource ?? undefined}
                     />
                   </div>
                 );
@@ -696,6 +698,7 @@ export default function WatchPage() {
                     currentEpisodeSlug={currentEpisodeData?.slug}
                     currentServerName={currentServer?.server_name}
                     movieSlug={movie.slug}
+                    preferSource={preferSource ?? undefined}
                     compact
                   />
                 </div>

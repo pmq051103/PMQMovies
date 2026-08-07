@@ -545,11 +545,14 @@ export default function HomePage() {
           </motion.section>
         </motion.div>
 
-        {/* Right sidebar — top rated + trending */}
-        <Sidebar
-          topRated={topRatedData?.items}
-          trending={topMoviesByViews?.items}
-        />
+        {/* Right sidebar */}
+        <div className="hidden w-72 shrink-0 xl:block">
+          <Sidebar
+            topRated={topRatedData?.items}
+            trending={topMoviesByViews?.items}
+            hotWeekly={topSeriesByViews?.items}
+          />
+        </div>
         </div>
         </div>
       </div>

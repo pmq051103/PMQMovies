@@ -200,23 +200,30 @@ export async function getMovieDetailDual(
   const hasPrimary = !!primary?.movie;
   const hasSecondary = !!secondary?.movie;
 
-  // When the caller explicitly prefers vsmov (the search result came
-  // from there) AND vsmov actually has the movie, lead with vsmov's
-  // metadata so the user sees the same film they clicked.
+  // When the caller explicitly prefers a source (vsmov or phimapi),
+  // ONLY merge episodes if both APIs have the same movie (matching
+  // TMDB id). Different slugs can map to entirely different films on
+  // each API, so blindly merging episodes would play the wrong video.
+  const sameTmdbId =
+    hasPrimary &&
+    hasSecondary &&
+    primary.movie.tmdb?.id &&
+    secondary.movie.tmdb?.id &&
+    String(primary.movie.tmdb.id) === String(secondary.movie.tmdb.id);
+
   if (prefer === 'vsmov' && hasSecondary) {
-    const mergedEpisodes = mergeEpisodes(
-      secondary.episodes,
-      primary?.episodes,
-    );
+    // Only merge phimapi episodes if they're confirmed to be the same movie
+    const mergedEpisodes = sameTmdbId
+      ? mergeEpisodes(secondary.episodes, primary?.episodes)
+      : secondary.episodes ?? [];
     return { ...secondary, episodes: mergedEpisodes };
   }
 
-  // Default path: phimapi primary, merge vsmov episode servers.
+  // Default path: phimapi primary
   if (hasPrimary) {
-    const mergedEpisodes = mergeEpisodes(
-      primary.episodes,
-      secondary?.episodes,
-    );
+    const mergedEpisodes = sameTmdbId
+      ? mergeEpisodes(primary.episodes, secondary?.episodes)
+      : primary.episodes ?? [];
     return { ...primary, episodes: mergedEpisodes };
   }
 
