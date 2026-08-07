@@ -74,7 +74,7 @@ export default function WelcomeTip() {
             <p className="text-sm leading-relaxed text-gray-300">
               {t(
                 'welcome.body',
-                'PMQMovies gộp phim từ nhiều nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng',
+                'Không Gian Phim gộp phim từ nhiều nguồn — nếu bạn không thấy phim mình cần trong danh mục, hãy dùng',
               )}{' '}
               <span className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
                 <FaSearch className="h-2.5 w-2.5" />

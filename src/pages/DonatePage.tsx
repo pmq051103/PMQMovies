@@ -39,12 +39,12 @@ export default function DonatePage() {
   return (
     <>
       <Helmet>
-        <title>{t("donate.title", "Ủng hộ PMQMovies")} - PMQMovies</title>
+        <title>{t("donate.title", "Ủng hộ Không Gian Phim")} - Không Gian Phim</title>
         <meta
           name="description"
           content={t(
             "donate.description",
-            "Ủng hộ PMQMovies để chúng tôi tiếp tục duy trì và phát triển dịch vụ xem phim online miễn phí chất lượng cao.",
+            "Ủng hộ Không Gian Phim để chúng tôi tiếp tục duy trì và phát triển dịch vụ xem phim online miễn phí chất lượng cao.",
           )}
         />
       </Helmet>
@@ -61,12 +61,12 @@ export default function DonatePage() {
               <FaHeart className="h-8 w-8 text-white" />
             </div>
             <h1 className="mb-4 text-3xl font-bold sm:text-4xl">
-              {t("donate.title", "Ủng hộ PMQMovies")}
+              {t("donate.title", "Ủng hộ Không Gian Phim")}
             </h1>
             <p className="mx-auto max-w-2xl text-base text-gray-400 sm:text-lg">
               {t(
                 "donate.subtitle",
-                "Cảm ơn bạn đã ghé thăm! Nếu bạn thấy PMQMovies hữu ích, hãy cân nhắc ủng hộ để chúng tôi có thêm động lực duy trì và phát triển.",
+                "Cảm ơn bạn đã ghé thăm! Nếu bạn thấy Không Gian Phim hữu ích, hãy cân nhắc ủng hộ để chúng tôi có thêm động lực duy trì và phát triển.",
               )}
             </p>
           </motion.div>
@@ -85,7 +85,7 @@ export default function DonatePage() {
               <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-xl bg-white p-3">
                 <img
                   src="/momo-qr.png"
-                  alt="MoMo QR PMQMovies"
+                  alt="MoMo QR Không Gian Phim"
                   className="h-full w-full"
                 />
               </div>
