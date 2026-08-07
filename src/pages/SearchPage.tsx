@@ -37,13 +37,9 @@ export default function SearchPage() {
 
   const qParam = searchParams.get('q') ?? '';
 
-  /* ---- Local state ---- */
-  const [keyword, setKeyword] = useState(qParam);
-  const debouncedKeyword = useDebounce(keyword, DEBOUNCE_DELAY);
-
-  // Guard ref: when the URL drives a keyword change, skip the
-  // keyword→URL sync to avoid a circular overwrite.
-  const urlDriven = useRef(false);
+  /* ---- Local state for input field ---- */
+  const [inputValue, setInputValue] = useState(qParam);
+  const debouncedKeyword = useDebounce(inputValue, DEBOUNCE_DELAY);
 
   /* ---- Stores ---- */
   const {
@@ -64,27 +60,13 @@ export default function SearchPage() {
   const showNoResults = hasSearched && !isLoading && movies.length === 0;
   const showRecentSearches = !hasSearched && recentSearches.length > 0;
 
-  /* ---- Sync keyword to URL (only for user-typed changes) ---- */
+  /**
+   * URL → input sync: When SearchModal navigates here with ?q=newterm,
+   * qParam changes and we update the input to match.
+   * This is the ONLY direction of sync — no circular dependency.
+   */
   useEffect(() => {
-    // Skip if this keyword change came from a URL navigation
-    if (urlDriven.current) {
-      urlDriven.current = false;
-      return;
-    }
-    if (debouncedKeyword.trim()) {
-      setSearchParams({ q: debouncedKeyword.trim() }, { replace: true });
-    } else {
-      setSearchParams({}, { replace: true });
-    }
-  }, [debouncedKeyword, setSearchParams]);
-
-  /* ---- Sync URL param → local state (from SearchModal or navigation) ---- */
-  useEffect(() => {
-    if (qParam !== keyword) {
-      urlDriven.current = true;
-      setKeyword(qParam);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setInputValue(qParam);
   }, [qParam]);
 
   /* ---- Focus input on mount ---- */
@@ -93,29 +75,45 @@ export default function SearchPage() {
   }, []);
 
   /* ---- Handlers ---- */
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setInputValue(val);
+      // Update URL immediately (replace, no history spam)
+      if (val.trim()) {
+        setSearchParams({ q: val.trim() }, { replace: true });
+      } else {
+        setSearchParams({}, { replace: true });
+      }
+    },
+    [setSearchParams],
+  );
+
   const handleSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
-      const trimmed = keyword.trim();
+      const trimmed = inputValue.trim();
       if (trimmed) {
         addRecentSearch(trimmed);
       }
       inputRef.current?.blur();
     },
-    [keyword, addRecentSearch],
+    [inputValue, addRecentSearch],
   );
 
   const handleClear = useCallback(() => {
-    setKeyword('');
+    setInputValue('');
+    setSearchParams({}, { replace: true });
     inputRef.current?.focus();
-  }, []);
+  }, [setSearchParams]);
 
   const handleRecentClick = useCallback(
     (term: string) => {
-      setKeyword(term);
+      setInputValue(term);
+      setSearchParams({ q: term }, { replace: true });
       addRecentSearch(term);
     },
-    [addRecentSearch],
+    [addRecentSearch, setSearchParams],
   );
 
   return (
@@ -139,12 +137,12 @@ export default function SearchPage() {
                 <input
                   ref={inputRef}
                   type="text"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
+                  value={inputValue}
+                  onChange={handleInputChange}
                   placeholder={t('search.placeholder')}
                   className="w-full rounded-xl border border-gray-800 bg-gray-900/80 py-4 pl-12 pr-12 text-lg text-white placeholder-gray-500 outline-none backdrop-blur-sm transition-colors focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20"
                 />
-                {keyword && (
+                {inputValue && (
                   <button
                     type="button"
                     onClick={handleClear}
