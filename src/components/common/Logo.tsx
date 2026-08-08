@@ -18,6 +18,17 @@ export interface LogoProps {
  *      artwork every few seconds — the classic film-reel scroll feel.
  * Both can be turned off via `animated={false}` (e.g. in Loading overlays
  * where too much motion becomes noisy).
+ *
+ * Brand wordmark ("KHÔNG GIAN PHIM") uses a cinematic serif pairing
+ * (Playfair Display + Cormorant Garamond) with a slow-moving gold
+ * gradient shimmer and a hairline sprocket-style divider, so the text
+ * reads as an engraved marquee rather than plain UI type. Make sure the
+ * fonts are loaded once globally, e.g. in index.html:
+ *
+ *   <link
+ *     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cormorant+Garamond:wght@500&display=swap"
+ *     rel="stylesheet"
+ *   />
  */
 export default function Logo({
   size = "md",
@@ -28,11 +39,11 @@ export default function Logo({
   const heights = { sm: 48, md: 68, lg: 96 };
   const h = heights[size];
 
-  const textSizes = { sm: 'text-sm', md: 'text-lg', lg: 'text-2xl' };
+  const textSizes = { sm: "text-sm", md: "text-lg", lg: "text-2xl" };
 
   const inner = (
     <span
-      className={`relative inline-flex items-center gap-2 select-none ${className}`}
+      className={`relative inline-flex items-center gap-0 select-none ${className}`}
       style={{ height: h }}
       aria-label="Không Gian Phim"
     >
@@ -42,7 +53,8 @@ export default function Logo({
         style={{
           height: h,
           width: "auto",
-          filter: "drop-shadow(0 0 8px rgba(212,175,55,0.5)) drop-shadow(0 0 20px rgba(212,175,55,0.2))",
+          filter:
+            "drop-shadow(0 0 8px rgba(212,175,55,0.5)) drop-shadow(0 0 20px rgba(212,175,55,0.2))",
         }}
         draggable={false}
         {...(animated
@@ -54,19 +66,50 @@ export default function Logo({
       />
 
       {/* Brand name text */}
-      <span className={`hidden sm:flex flex-col leading-tight ${textSizes[size]}`}>
-        <span className="font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500" style={{ textShadow: '0 0 12px rgba(212,175,55,0.3)' }}>
+      <span className={`hidden sm:flex flex-col justify-center -ml-6 ${textSizes[size]}`}>
+        <motion.span
+          className="font-bold tracking-[0.08em] text-transparent bg-clip-text"
+          style={{
+            backgroundImage:
+              "linear-gradient(90deg, #b8860b 0%, #f5d485 25%, #fff6d9 50%, #f5d485 75%, #b8860b 100%)",
+            backgroundSize: "200% 100%",
+            textShadow: "0 0 18px rgba(212,175,55,0.35)",
+            fontFamily: "'Playfair Display', Georgia, serif",
+            lineHeight: 1.35,
+            paddingTop: "0.15em",
+            display: "inline-block",
+          }}
+          animate={
+            animated
+              ? { backgroundPositionX: ["0%", "100%", "0%"] }
+              : undefined
+          }
+          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+        >
           KHÔNG GIAN
-        </span>
-        <span className="text-[0.6em] font-semibold tracking-[0.3em] text-gray-400">
+        </motion.span>
+
+        {/* Thin gold divider — echoes a film-reel sprocket line */}
+        <span
+          className="my-[3px] h-[1px] w-full"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(212,175,55,0.7) 50%, transparent)",
+          }}
+        />
+
+        <span
+          className="text-[0.55em] font-medium tracking-[0.45em] text-gray-400/90"
+          style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+        >
           PHIM
         </span>
       </span>
 
-      {/* Cinematic sheen — a slim diagonal white gradient that sweeps across
-          the logo, imitating light bouncing off metallic film. Sits above
-          the img via absolute positioning + mix-blend-overlay so it lights
-          the letters without darkening transparent pixels. */}
+      {/* Cinematic sheen — a slim diagonal white gradient that sweeps
+          across the logo, imitating light bouncing off metallic film.
+          Sits above the img via absolute positioning + mix-blend-overlay
+          so it lights the letters without darkening transparent pixels. */}
       {animated && (
         <motion.span
           aria-hidden="true"
