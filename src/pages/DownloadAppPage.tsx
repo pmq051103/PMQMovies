@@ -16,8 +16,21 @@ import {
 /* Config — update the APK URL after each new build                    */
 /* ------------------------------------------------------------------ */
 
-const APK_DOWNLOAD_URL =
-  'https://expo.dev/accounts/pmq051103/projects/khong-gian-phim/builds/d0c2cb0e-a8f1-4f4e-8fbe-eb4ff515946f';
+/**
+ * Direct APK download from this website.
+ *
+ * Place the APK file at `public/khonggianphim.apk` in the web project.
+ * Vercel/Netlify serves everything in `public/` as static files, so
+ * visitors get a direct browser download — no Expo account needed, no
+ * redirect, no extra clicks.
+ *
+ * After each new EAS build:
+ *   1. Download the APK from the Expo build page
+ *   2. Rename it to `khonggianphim.apk`
+ *   3. Drop it into `public/` folder
+ *   4. Commit + deploy
+ */
+const APK_DOWNLOAD_URL = '/khonggianphim.apk';
 
 const APP_VERSION = '1.0.0';
 
@@ -103,8 +116,7 @@ export default function DownloadAppPage() {
           >
             <a
               href={APK_DOWNLOAD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              download="khonggianphim.apk"
               className="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 px-10 py-4 text-lg font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:from-red-500 hover:to-red-600 hover:shadow-xl hover:shadow-red-500/40 active:scale-[0.98]"
             >
               <FaAndroid className="h-6 w-6" />
@@ -112,12 +124,20 @@ export default function DownloadAppPage() {
               <FaDownload className="h-4 w-4" />
             </a>
 
+            <a
+              href={APK_DOWNLOAD_URL}
+              download="khonggianphim.apk"
+              className="text-xs text-gray-500 underline transition-colors hover:text-gray-300"
+            >
+              Tải trực tiếp (nếu nút trên không hoạt động)
+            </a>
+
             <div className="flex items-center gap-3 text-xs text-gray-500">
               <span>Phiên bản {APP_VERSION}</span>
               <span>·</span>
               <span>Android 6.0+</span>
               <span>·</span>
-              <span>~115 MB</span>
+              <span>~100 MB</span>
             </div>
 
             <p className="mt-1 max-w-md text-center text-xs leading-5 text-gray-500">
