@@ -68,12 +68,13 @@ export default function Logo({
       {/* Brand name text */}
       <span className={`hidden sm:flex flex-col justify-center -ml-6 ${textSizes[size]}`}>
         <motion.span
-          className="font-bold tracking-[0.08em] text-transparent bg-clip-text"
+          className="font-bold tracking-[0.08em] text-transparent bg-clip-text
+            bg-[linear-gradient(90deg,#8a6212_0%,#a8791a_25%,#caa23e_50%,#a8791a_75%,#8a6212_100%)]
+            [text-shadow:0_1px_1px_rgba(255,255,255,0.4)]
+            dark:bg-[linear-gradient(90deg,#b8860b_0%,#f5d485_25%,#fff6d9_50%,#f5d485_75%,#b8860b_100%)]
+            dark:[text-shadow:0_0_18px_rgba(212,175,55,0.35)]
+            bg-[length:200%_100%]"
           style={{
-            backgroundImage:
-              "linear-gradient(90deg, #b8860b 0%, #f5d485 25%, #fff6d9 50%, #f5d485 75%, #b8860b 100%)",
-            backgroundSize: "200% 100%",
-            textShadow: "0 0 18px rgba(212,175,55,0.35)",
             fontFamily: "'Playfair Display', Georgia, serif",
             lineHeight: 1.35,
             paddingTop: "0.15em",
@@ -91,15 +92,13 @@ export default function Logo({
 
         {/* Thin gold divider — echoes a film-reel sprocket line */}
         <span
-          className="my-[3px] h-[1px] w-full"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(212,175,55,0.7) 50%, transparent)",
-          }}
+          className="my-[3px] h-[1px] w-full
+            bg-[linear-gradient(90deg,transparent,rgba(138,98,18,0.55)_50%,transparent)]
+            dark:bg-[linear-gradient(90deg,transparent,rgba(212,175,55,0.7)_50%,transparent)]"
         />
 
         <span
-          className="text-[0.55em] font-medium tracking-[0.45em] text-gray-400/90"
+          className="text-[0.55em] font-medium tracking-[0.45em] text-neutral-600 dark:text-gray-400/90"
           style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
         >
           PHIM
