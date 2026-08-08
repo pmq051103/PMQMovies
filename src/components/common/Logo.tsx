@@ -28,9 +28,11 @@ export default function Logo({
   const heights = { sm: 48, md: 68, lg: 96 };
   const h = heights[size];
 
+  const textSizes = { sm: 'text-sm', md: 'text-lg', lg: 'text-2xl' };
+
   const inner = (
     <span
-      className={`relative inline-flex items-center select-none ${className}`}
+      className={`relative inline-flex items-center gap-2 select-none ${className}`}
       style={{ height: h }}
       aria-label="Không Gian Phim"
     >
@@ -50,6 +52,16 @@ export default function Logo({
             }
           : {})}
       />
+
+      {/* Brand name text */}
+      <span className={`hidden sm:flex flex-col leading-tight ${textSizes[size]}`}>
+        <span className="font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500" style={{ textShadow: '0 0 12px rgba(212,175,55,0.3)' }}>
+          KHÔNG GIAN
+        </span>
+        <span className="text-[0.6em] font-semibold tracking-[0.3em] text-gray-400">
+          PHIM
+        </span>
+      </span>
 
       {/* Cinematic sheen — a slim diagonal white gradient that sweeps across
           the logo, imitating light bouncing off metallic film. Sits above
