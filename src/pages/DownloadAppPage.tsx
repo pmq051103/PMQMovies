@@ -30,8 +30,7 @@ import {
  *   3. Drop it into `public/` folder
  *   4. Commit + deploy
  */
-const APK_DOWNLOAD_URL = '/khonggianphim.apk';
-
+const APK_DOWNLOAD_URL = 'https://github.com/pmq051103/PMQMovies/releases/download/v1.0.0/khonggianphim.apk';
 const APP_VERSION = '1.0.0';
 
 /* ------------------------------------------------------------------ */
