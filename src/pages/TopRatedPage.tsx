@@ -34,8 +34,8 @@ export default function TopRatedPage() {
         <meta name="description" content="Bảng xếp hạng phim hay nhất, phim đánh giá cao nhất tại Không Gian Phim. Top phim đáng xem." />
         <meta property="og:title" content={t('seo.topRatedTitle')} />
         <meta property="og:description" content="Top phim đánh giá cao nhất, phim hay đáng xem." />
-        <meta property="og:url" content="https://khonggianphim.com/top-rated" />
-        <link rel="canonical" href="https://khonggianphim.com/top-rated" />
+        <meta property="og:url" content="https://khonggianphim.online/top-rated" />
+        <link rel="canonical" href="https://khonggianphim.online/top-rated" />
       </Helmet>
 
       <motion.div

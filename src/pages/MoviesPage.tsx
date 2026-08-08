@@ -109,8 +109,8 @@ export default function MoviesPage() {
         <meta name="description" content="Phim lẻ mới nhất, phim lẻ hay, xem phim lẻ online miễn phí chất lượng cao tại Không Gian Phim. Vietsub, Thuyết minh, Lồng tiếng." />
         <meta property="og:title" content={t('seo.moviesTitle')} />
         <meta property="og:description" content="Phim lẻ mới nhất, phim lẻ hay, xem phim lẻ online miễn phí chất lượng cao." />
-        <meta property="og:url" content="https://khonggianphim.com/phim-le" />
-        <link rel="canonical" href="https://khonggianphim.com/phim-le" />
+        <meta property="og:url" content="https://khonggianphim.online/phim-le" />
+        <link rel="canonical" href="https://khonggianphim.online/phim-le" />
       </Helmet>
 
       <motion.div

@@ -30,7 +30,8 @@ import {
  *   3. Drop it into `public/` folder
  *   4. Commit + deploy
  */
-const APK_DOWNLOAD_URL = 'https://github.com/pmq051103/PMQMovies/releases/download/v1.0.0/khonggianphim.apk';
+const APK_DOWNLOAD_URL = '/khonggianphim.apk';
+
 const APP_VERSION = '1.0.0';
 
 /* ------------------------------------------------------------------ */
@@ -136,7 +137,7 @@ export default function DownloadAppPage() {
               <span>·</span>
               <span>Android 6.0+</span>
               <span>·</span>
-              <span>~100 MB</span>
+              <span>~25 MB</span>
             </div>
 
             <p className="mt-1 max-w-md text-center text-xs leading-5 text-gray-500">

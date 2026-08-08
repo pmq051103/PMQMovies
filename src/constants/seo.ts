@@ -30,7 +30,7 @@ export const DEFAULT_SEO: SEOConfig = {
   twitterCard: "summary_large_image",
   locale: "vi_VN",
   themeColor: "#0f0f0f",
-  canonicalBaseUrl: "https://khonggianphim.com",
+  canonicalBaseUrl: "https://khonggianphim.online",
 };
 
 /** Build a page-specific SEO config, merging with the defaults. */

@@ -18,9 +18,9 @@ export default function FavoritesPage() {
         <title>{t('seo.favoritesTitle')}</title>
         <meta name="description" content="Danh sách phim yêu thích của bạn tại Không Gian Phim." />
         <meta property="og:title" content={t('seo.favoritesTitle')} />
-        <meta property="og:url" content="https://khonggianphim.com/yeu-thich" />
+        <meta property="og:url" content="https://khonggianphim.online/yeu-thich" />
         <meta name="robots" content="noindex" />
-        <link rel="canonical" href="https://khonggianphim.com/yeu-thich" />
+        <link rel="canonical" href="https://khonggianphim.online/yeu-thich" />
       </Helmet>
 
       <motion.div

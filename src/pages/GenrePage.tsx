@@ -200,8 +200,8 @@ function GenreDetailView({ slug }: { slug: string }) {
         <title>{`${genreName} - ${t('seo.genresTitle')}`}</title>
         <meta name="description" content={`Phim thể loại ${genreName} — xem phim online miễn phí tại Không Gian Phim.`} />
         <meta property="og:title" content={`${genreName} - ${t('seo.genresTitle')}`} />
-        <meta property="og:url" content={`https://khonggianphim.com/the-loai/${slug}`} />
-        <link rel="canonical" href={`https://khonggianphim.com/the-loai/${slug}`} />
+        <meta property="og:url" content={`https://khonggianphim.online/the-loai/${slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.online/the-loai/${slug}`} />
       </Helmet>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -318,8 +318,8 @@ export default function GenrePage() {
           <title>{t('seo.genresTitle')}</title>
           <meta name="description" content="Danh sách thể loại phim tại Không Gian Phim — hành động, tình cảm, kinh dị, hoạt hình và nhiều hơn nữa." />
           <meta property="og:title" content={t('seo.genresTitle')} />
-          <meta property="og:url" content="https://khonggianphim.com/the-loai" />
-          <link rel="canonical" href="https://khonggianphim.com/the-loai" />
+          <meta property="og:url" content="https://khonggianphim.online/the-loai" />
+          <link rel="canonical" href="https://khonggianphim.online/the-loai" />
         </Helmet>
       )}
 

@@ -5,4 +5,4 @@ Disallow: /account
 Disallow: /api/
 Disallow: /api2/
 
-Sitemap: https://khonggianphim.com/sitemap.xml
+Sitemap: https://khonggianphim.online/sitemap.xml

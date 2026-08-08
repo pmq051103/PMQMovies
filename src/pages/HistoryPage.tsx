@@ -29,9 +29,9 @@ export default function HistoryPage() {
         <title>{t('seo.historyTitle')}</title>
         <meta name="description" content="Lịch sử xem phim của bạn tại Không Gian Phim." />
         <meta property="og:title" content={t('seo.historyTitle')} />
-        <meta property="og:url" content="https://khonggianphim.com/lich-su" />
+        <meta property="og:url" content="https://khonggianphim.online/lich-su" />
         <meta name="robots" content="noindex" />
-        <link rel="canonical" href="https://khonggianphim.com/lich-su" />
+        <link rel="canonical" href="https://khonggianphim.online/lich-su" />
       </Helmet>
 
       <motion.div

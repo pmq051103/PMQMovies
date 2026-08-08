@@ -193,8 +193,8 @@ function CountryDetailView({ slug }: { slug: string }) {
         <title>{`${countryName} - ${t('seo.countriesTitle')}`}</title>
         <meta name="description" content={`Phim ${countryName} — xem phim online miễn phí tại Không Gian Phim.`} />
         <meta property="og:title" content={`${countryName} - ${t('seo.countriesTitle')}`} />
-        <meta property="og:url" content={`https://khonggianphim.com/quoc-gia/${slug}`} />
-        <link rel="canonical" href={`https://khonggianphim.com/quoc-gia/${slug}`} />
+        <meta property="og:url" content={`https://khonggianphim.online/quoc-gia/${slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.online/quoc-gia/${slug}`} />
       </Helmet>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -297,8 +297,8 @@ export default function CountryPage() {
           <title>{t('seo.countriesTitle')}</title>
           <meta name="description" content="Danh sách phim theo quốc gia tại Không Gian Phim — Hàn Quốc, Trung Quốc, Mỹ, Nhật Bản và nhiều hơn nữa." />
           <meta property="og:title" content={t('seo.countriesTitle')} />
-          <meta property="og:url" content="https://khonggianphim.com/quoc-gia" />
-          <link rel="canonical" href="https://khonggianphim.com/quoc-gia" />
+          <meta property="og:url" content="https://khonggianphim.online/quoc-gia" />
+          <link rel="canonical" href="https://khonggianphim.online/quoc-gia" />
         </Helmet>
       )}
 

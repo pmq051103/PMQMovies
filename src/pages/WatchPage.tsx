@@ -405,8 +405,8 @@ export default function WatchPage() {
           content={`${movie.name}${currentEpisodeData ? ` - ${currentEpisodeData.name}` : ''}`}
         />
         <meta property="og:image" content={getMoviePoster(movie.thumb_url, movie.poster_url)} />
-        <meta property="og:url" content={`https://khonggianphim.com/xem/${slug}`} />
-        <link rel="canonical" href={`https://khonggianphim.com/xem/${slug}`} />
+        <meta property="og:url" content={`https://khonggianphim.online/xem/${slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.online/xem/${slug}`} />
       </Helmet>
 
       {/* Cinema mode backdrop — full-viewport dark surface. Clicking it

@@ -105,8 +105,8 @@ export default function TVShowsPage() {
         <meta name="description" content="Phim bộ mới nhất, phim bộ hay, xem phim bộ online miễn phí tại Không Gian Phim. Vietsub, Thuyết minh, Lồng tiếng." />
         <meta property="og:title" content={t('seo.tvShowsTitle')} />
         <meta property="og:description" content="Phim bộ mới nhất, phim bộ hay, xem phim bộ online miễn phí." />
-        <meta property="og:url" content="https://khonggianphim.com/phim-bo" />
-        <link rel="canonical" href="https://khonggianphim.com/phim-bo" />
+        <meta property="og:url" content="https://khonggianphim.online/phim-bo" />
+        <link rel="canonical" href="https://khonggianphim.online/phim-bo" />
       </Helmet>
 
       <motion.div

@@ -143,8 +143,8 @@ export default function MovieDetailPage() {
         <meta property="og:description" content={seoDescription} />
         <meta property="og:image" content={posterUrl} />
         <meta property="og:type" content="video.movie" />
-        <meta property="og:url" content={`https://khonggianphim.com/phim/${movie.slug}`} />
-        <link rel="canonical" href={`https://khonggianphim.com/phim/${movie.slug}`} />
+        <meta property="og:url" content={`https://khonggianphim.online/phim/${movie.slug}`} />
+        <link rel="canonical" href={`https://khonggianphim.online/phim/${movie.slug}`} />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -164,10 +164,10 @@ export default function MovieDetailPage() {
             "genre": (movie as any).category?.map((c: any) => c.name) || [],
             "countryOfOrigin": (movie as any).country?.map((c: any) => c.name) || [],
             "datePublished": movie.year > 0 ? String(movie.year) : undefined,
-            "url": `https://khonggianphim.com/phim/${movie.slug}`,
+            "url": `https://khonggianphim.online/phim/${movie.slug}`,
             "potentialAction": {
               "@type": "WatchAction",
-              "target": `https://khonggianphim.com/xem/${movie.slug}`
+              "target": `https://khonggianphim.online/xem/${movie.slug}`
             }
           })}
         </script>
