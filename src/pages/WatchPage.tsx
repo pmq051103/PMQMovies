@@ -238,10 +238,24 @@ export default function WatchPage() {
     playbackRef.current = { currentTime: 0, duration: 0 };
   }, [serverIndex, episodeIndex]);
 
-  /* ---- Save watch history on unmount / beforeunload ---- */
+  /* ---- Save watch history ----
+     `beforeunload` almost never fires on mobile when the OS kills the
+     tab/app from the task switcher — that's a hard process kill, not a
+     page navigation, so browsers get no chance to run the handler.
+     To make resume-progress reliable on mobile we:
+       1. Save on `visibilitychange` -> 'hidden', which DOES fire
+          reliably when a mobile browser is backgrounded (switching
+          apps, locking the screen, swiping away), even if the process
+          is later killed outright.
+       2. Save on `pagehide` as a second safety net (works in more
+          mobile Safari/Chrome cases than `beforeunload`).
+       3. Save periodically (every 5s) while playing, so even in the
+          worst case (instant kill with no events at all) we lose at
+          most a few seconds of progress instead of the whole session. */
   useEffect(() => {
     const saveHistory = () => {
       if (!movie || !currentEpisodeData || !currentServer) return;
+      if (playbackRef.current.currentTime <= 0) return;
       addToHistory({
         slug: movie.slug,
         name: movie.name,
@@ -256,10 +270,20 @@ export default function WatchPage() {
       });
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') saveHistory();
+    };
+
     window.addEventListener('beforeunload', saveHistory);
+    window.addEventListener('pagehide', saveHistory);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const intervalId = window.setInterval(saveHistory, 5000);
 
     return () => {
       window.removeEventListener('beforeunload', saveHistory);
+      window.removeEventListener('pagehide', saveHistory);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(intervalId);
       saveHistory();
     };
   }, [movie, currentEpisodeData, currentServer, addToHistory]);
