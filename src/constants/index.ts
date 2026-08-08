@@ -172,6 +172,13 @@ export const STATUS_OPTIONS = [
   { label: 'Hoàn thành', value: 'completed' },
 ] as const;
 
+export const SORT_OPTIONS = [
+  { label: 'Mới cập nhật', value: 'modified.time' },
+  { label: 'Năm sản xuất', value: 'year' },
+  { label: 'Lượt xem', value: 'view_total' },
+  { label: 'Điểm đánh giá', value: 'tmdb.vote_average' },
+] as const;
+
 export const QUALITY_OPTIONS = ['HD', 'FHD', 'SD', '4K', 'CAM'] as const;
 
 export const LANGUAGE_OPTIONS = ['Vietsub', 'Thuyết Minh', 'Lồng Tiếng'] as const;

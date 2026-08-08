@@ -3,12 +3,24 @@ import { useSearchParams } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaSearch, FaTimes, FaHistory, FaTrash, FaChevronDown } from 'react-icons/fa';
+import {
+  FaSearch,
+  FaTimes,
+  FaHistory,
+  FaTrash,
+  FaChevronDown,
+  FaChevronUp,
+  FaFilter,
+  FaGlobe,
+  FaTags,
+  FaCalendarAlt,
+  FaSortAmountDown,
+} from 'react-icons/fa';
 
 import { MovieGrid } from '@/components/movie';
 import { GridSkeleton, EmptyState } from '@/components/common';
-import { DEBOUNCE_DELAY } from '@/constants';
-import { useSearchMovies, useDebounce } from '@/hooks';
+import { DEBOUNCE_DELAY, SORT_OPTIONS, YEARS } from '@/constants';
+import { useFilteredSearch, useGenres, useCountries, useDebounce } from '@/hooks';
 import { useSearchStore } from '@/store';
 
 /* ------------------------------------------------------------------ */
@@ -30,6 +42,46 @@ const INITIAL_VISIBLE = 24;
 const LOAD_MORE_STEP = 24;
 
 /* ------------------------------------------------------------------ */
+/* Filter select component                                             */
+/* ------------------------------------------------------------------ */
+
+function FilterSelect({
+  icon,
+  label,
+  value,
+  onChange,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex-1 min-w-[140px]">
+      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-400">
+        {icon}
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-gray-700 bg-gray-800/80 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 appearance-none cursor-pointer"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M3 5l3 3 3-3'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 10px center',
+          paddingRight: '32px',
+        }}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* SearchPage                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -43,6 +95,11 @@ export default function SearchPage() {
   /* ---- Local state ---- */
   const [inputValue, setInputValue] = useState(qParam);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [country, setCountry] = useState('');
+  const [category, setCategory] = useState('');
+  const [year, setYear] = useState('');
+  const [sortField, setSortField] = useState('');
   const debouncedKeyword = useDebounce(inputValue, DEBOUNCE_DELAY);
 
   /* ---- Stores ---- */
@@ -53,24 +110,45 @@ export default function SearchPage() {
     clearRecentSearches,
   } = useSearchStore();
 
+  /* ---- Reference data ---- */
+  const { data: genresData } = useGenres();
+  const { data: countriesData } = useCountries();
+  const genres = Array.isArray(genresData) ? genresData : [];
+  const countries = Array.isArray(countriesData) ? countriesData : [];
+
   /* ---- Fetch results ---- */
-  const { data, isLoading } = useSearchMovies({
+  const { data, isLoading } = useFilteredSearch({
     keyword: debouncedKeyword,
-    limit: 120,
+    country: country || undefined,
+    category: category || undefined,
+    year: year || undefined,
+    sort_field: sortField || undefined,
+    sort_type: 'desc',
   });
 
   const movies = data?.items ?? [];
   const hasSearched = debouncedKeyword.trim().length > 0;
   const showNoResults = hasSearched && !isLoading && movies.length === 0;
   const showRecentSearches = !hasSearched && recentSearches.length > 0;
+  const hasActiveFilters = !!(country || category || year || sortField);
 
   const visibleMovies = movies.slice(0, visibleCount);
   const hasMore = movies.length > visibleCount;
 
+  /* Auto-open filters when coming from URL with filter params */
+  useEffect(() => {
+    const c = searchParams.get('country');
+    const cat = searchParams.get('category');
+    const y = searchParams.get('year');
+    if (c) { setCountry(c); setFiltersOpen(true); }
+    if (cat) { setCategory(cat); setFiltersOpen(true); }
+    if (y) { setYear(y); setFiltersOpen(true); }
+  }, []);
+
   /* ---- URL → input sync ---- */
   useEffect(() => {
     setInputValue(qParam);
-    setVisibleCount(INITIAL_VISIBLE); // Reset on new search
+    setVisibleCount(INITIAL_VISIBLE);
   }, [qParam]);
 
   /* ---- Focus input on mount ---- */
@@ -78,10 +156,11 @@ export default function SearchPage() {
     inputRef.current?.focus();
   }, []);
 
-  /* ---- Reset visible count when keyword changes ---- */
+  /* ---- Reset visible count when keyword or filters change ---- */
   useEffect(() => {
     setVisibleCount(INITIAL_VISIBLE);
-  }, [debouncedKeyword]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [debouncedKeyword, country, category, year, sortField]);
 
   /* ---- Handlers ---- */
   const handleInputChange = useCallback(
@@ -128,14 +207,21 @@ export default function SearchPage() {
     setVisibleCount((prev) => prev + LOAD_MORE_STEP);
   }, []);
 
+  const handleResetFilters = useCallback(() => {
+    setCountry('');
+    setCategory('');
+    setYear('');
+    setSortField('');
+  }, []);
+
   return (
     <>
       <Helmet>
         <title>{t('seo.searchTitle')}</title>
         <meta name="description" content="Tìm kiếm phim tại Không Gian Phim — tìm phim lẻ, phim bộ, phim chiếu rạp theo tên." />
         <meta property="og:title" content={t('seo.searchTitle')} />
-        <meta property="og:url" content="https://khonggianphim.com/tim-kiem" />
-        <link rel="canonical" href="https://khonggianphim.com/tim-kiem" />
+        <meta property="og:url" content="https://khonggianphim.online/tim-kiem" />
+        <link rel="canonical" href="https://khonggianphim.online/tim-kiem" />
       </Helmet>
 
       <motion.div
@@ -169,7 +255,114 @@ export default function SearchPage() {
                 )}
               </div>
             </form>
+
+            {/* Filter toggle */}
+            <div className="mt-3 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+              >
+                <FaFilter className="h-3 w-3" />
+                {filtersOpen ? 'Thu gọn bộ lọc' : 'Mở rộng bộ lọc'}
+                {hasActiveFilters && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                    {[country, category, year, sortField].filter(Boolean).length}
+                  </span>
+                )}
+                {filtersOpen ? (
+                  <FaChevronUp className="h-2.5 w-2.5" />
+                ) : (
+                  <FaChevronDown className="h-2.5 w-2.5" />
+                )}
+              </button>
+            </div>
           </div>
+
+          {/* Filter panel */}
+          <AnimatePresence>
+            {filtersOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="mx-auto mt-4 max-w-3xl rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+                  <div className="flex flex-wrap gap-4">
+                    <FilterSelect
+                      icon={<FaGlobe className="h-3 w-3" />}
+                      label={t('filter.country')}
+                      value={country}
+                      onChange={setCountry}
+                    >
+                      <option value="">{t('filter.allCountries')}</option>
+                      {(Array.isArray(countries) ? countries : []).map((c: any) => (
+                        <option key={c.slug} value={c.slug}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </FilterSelect>
+
+                    <FilterSelect
+                      icon={<FaTags className="h-3 w-3" />}
+                      label={t('filter.genre')}
+                      value={category}
+                      onChange={setCategory}
+                    >
+                      <option value="">{t('filter.allGenres')}</option>
+                      {(Array.isArray(genres) ? genres : []).map((g: any) => (
+                        <option key={g.slug} value={g.slug}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </FilterSelect>
+
+                    <FilterSelect
+                      icon={<FaCalendarAlt className="h-3 w-3" />}
+                      label={t('filter.year')}
+                      value={year}
+                      onChange={setYear}
+                    >
+                      <option value="">{t('filter.allYears')}</option>
+                      {YEARS.map((y) => (
+                        <option key={y} value={String(y)}>
+                          {y}
+                        </option>
+                      ))}
+                    </FilterSelect>
+
+                    <FilterSelect
+                      icon={<FaSortAmountDown className="h-3 w-3" />}
+                      label={t('filter.sortBy')}
+                      value={sortField}
+                      onChange={setSortField}
+                    >
+                      <option value="">{t('filter.defaultSort')}</option>
+                      {SORT_OPTIONS.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </FilterSelect>
+                  </div>
+
+                  {hasActiveFilters && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        className="text-xs text-gray-400 transition-colors hover:text-red-400"
+                      >
+                        {t('filter.reset')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Recent searches */}
           <AnimatePresence>
@@ -233,6 +426,11 @@ export default function SearchPage() {
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-200">
                   {t('search.results')}
+                  {hasActiveFilters && (
+                    <span className="ml-2 text-sm font-normal text-gray-500">
+                      (có bộ lọc)
+                    </span>
+                  )}
                 </h2>
                 {movies.length > 0 && (
                   <span className="text-sm text-gray-500">
@@ -248,7 +446,11 @@ export default function SearchPage() {
               <EmptyState
                 icon={<FaSearch />}
                 title={t('search.noResults')}
-                description={`"${debouncedKeyword}"`}
+                description={
+                  hasActiveFilters
+                    ? `"${debouncedKeyword}" — thử bỏ bớt bộ lọc`
+                    : `"${debouncedKeyword}"`
+                }
               />
             )}
 

@@ -141,6 +141,88 @@ export function useSearchMovies(params: SearchParams) {
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* Filtered search (used by the enhanced SearchPage)                   */
+/* ------------------------------------------------------------------ */
+
+export interface FilteredSearchParams {
+  keyword: string;
+  country?: string;
+  category?: string;
+  year?: string;
+  sort_field?: string;
+  sort_type?: 'asc' | 'desc';
+}
+
+/**
+ * Search with server-side filters. When any filter is active the query goes
+ * directly to `/v1/api/tim-kiem` with the filter params — bypassing the
+ * dual-source merge (vsmov doesn't support filters). When NO filters are set,
+ * falls back to the existing `searchMoviesDual` which merges + ranks across
+ * both APIs and fetches 2 pages.
+ *
+ * This is how the app's Duyệt Tìm works, now brought to the web.
+ */
+export function useFilteredSearch(params: FilteredSearchParams) {
+  const keyword = params.keyword?.trim() ?? '';
+  const hasFilters = !!(params.country || params.category || params.year);
+
+  return useQuery({
+    queryKey: ['filteredSearch', params],
+    queryFn: async () => {
+      if (!keyword) return { items: [], pagination: undefined };
+
+      if (hasFilters) {
+        // Direct API call with filters — vsmov can't filter so skip it
+        const queryParams: Record<string, unknown> = {
+          keyword,
+          limit: 64,
+        };
+        if (params.country) queryParams.country = params.country;
+        if (params.category) queryParams.category = params.category;
+        if (params.year) queryParams.year = params.year;
+        if (params.sort_field) {
+          queryParams.sort_field = params.sort_field;
+          queryParams.sort_type = params.sort_type ?? 'desc';
+        }
+
+        // Fetch 2 pages to avoid the "Mai" problem
+        const { apiGet } = await import('@/api');
+        const [p1, p2] = await Promise.all([
+          apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
+            params: queryParams,
+          }),
+          apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
+            params: { ...queryParams, page: 2 },
+          }).catch(() => null),
+        ]);
+
+        const items1 = (p1 as any)?.data?.items ?? (p1 as any)?.items ?? [];
+        const items2 = (p2 as any)?.data?.items ?? (p2 as any)?.items ?? [];
+        const allItems = [...items1, ...items2];
+
+        // Dedupe
+        const seen = new Set<string>();
+        const deduped = allItems.filter((m: MovieListItem) => {
+          if (!m?.slug || seen.has(m.slug)) return false;
+          seen.add(m.slug);
+          return true;
+        });
+
+        return {
+          items: transformMovieItems(deduped),
+          pagination: (p1 as any)?.data?.params?.pagination ?? (p1 as any)?.pagination,
+        };
+      }
+
+      // No filters → use dual-source ranked search (existing logic)
+      const result = await searchMovies(keyword, 128);
+      return selectListResponse(result);
+    },
+    enabled: keyword.length > 0,
+  });
+}
+
 /** Full genre list. */
 export function useGenres() {
   return useQuery({

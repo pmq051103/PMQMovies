@@ -16,6 +16,7 @@ const FavoritesPage = React.lazy(() => import('@/pages/FavoritesPage'));
 const HistoryPage = React.lazy(() => import('@/pages/HistoryPage'));
 const NowPlayingPage = React.lazy(() => import('@/pages/NowPlayingPage'));
 const DonatePage = React.lazy(() => import('@/pages/DonatePage'));
+const DownloadAppPage = React.lazy(() => import('@/pages/DownloadAppPage'));
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'));
 
 export default function AppRoutes() {
@@ -38,6 +39,7 @@ export default function AppRoutes() {
           <Route path="/yeu-thich" element={<FavoritesPage />} />
           <Route path="/lich-su" element={<HistoryPage />} />
           <Route path="/donate" element={<DonatePage />} />
+          <Route path="/tai-app" element={<DownloadAppPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

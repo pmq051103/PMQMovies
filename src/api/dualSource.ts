@@ -120,14 +120,22 @@ export async function searchMoviesDual(
   const trimmed = keyword.trim();
   if (!trimmed) return { status: true, items: [] };
 
-  // Fetch max page 1 from both APIs (64 items each). After deduping
-  // and ranking, this yields 50-80+ unique results — plenty for search.
+  // Fetch pages 1+2 from phimapi (up to 128 items) + page 1 from vsmov.
+  // Short keywords like "mai" match hundreds of titles — page 1 alone
+  // (64 items) can bury an exact-name match behind partial hits like
+  // "Mãi Mãi", "Mái Nhà", etc. Two pages cost one extra request but
+  // virtually guarantee the exact title surfaces for ranking.
   const fetchLimit = 64;
 
-  const [primary, secondary] = await Promise.all([
+  const [primary, primaryP2, secondary] = await Promise.all([
     safe(
       apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
         params: { keyword: trimmed, limit: fetchLimit },
+      }),
+    ),
+    safe(
+      apiGet<APIListResponse<MovieListItem>>('/v1/api/tim-kiem', {
+        params: { keyword: trimmed, limit: fetchLimit, page: 2 },
       }),
     ),
     safeRetry(() =>
@@ -137,7 +145,10 @@ export async function searchMoviesDual(
     ),
   ]);
 
-  const primaryItems = extractItems(primary);
+  const primaryItems = [
+    ...extractItems(primary),
+    ...extractItems(primaryP2),
+  ];
   const secondaryItems = extractItems(secondary);
 
   // Rank by relevance instead of naively concatenating — ensures exact

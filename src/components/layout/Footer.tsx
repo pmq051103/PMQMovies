@@ -24,6 +24,7 @@ const quickLinks: FooterLink[] = [
   { labelKey: "footer.privacy", path: "#" },
   { labelKey: "footer.terms", path: "#" },
   { labelKey: "footer.donate", path: "/donate" },
+  { labelKey: "footer.downloadApp", path: "/tai-app" },
 ];
 
 const socialLinks = [

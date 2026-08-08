@@ -283,7 +283,8 @@
     "emailPlaceholder": "Enter your email",
     "phone": "Phone",
     "donate": "Donate",
-    "donateCta": "Support Không Gian Phim"
+    "donateCta": "Support Không Gian Phim",
+    "downloadApp": "Download App"
   },
   "episode": {
     "server": "Server",

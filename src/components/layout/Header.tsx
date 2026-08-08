@@ -8,6 +8,7 @@ import {
   FaUserCircle,
   FaChevronDown,
   FaHeart,
+  FaDownload,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -272,6 +273,16 @@ const Header: React.FC = () => {
                 <FaHeart className="h-4 w-4" />
               </RouterLink>
 
+              {/* Download app link */}
+              <RouterLink
+                to="/tai-app"
+                className="hidden items-center gap-1.5 rounded-full bg-red-600/15 px-3 py-1.5 text-xs font-semibold text-red-400 transition-colors duration-200 hover:bg-red-600/25 hover:text-red-300 sm:inline-flex"
+                title="Tải App"
+              >
+                <FaDownload className="h-3 w-3" />
+                Tải App
+              </RouterLink>
+
               <div className="hidden sm:block">
                 <LanguageSwitcher />
               </div>
@@ -409,6 +420,14 @@ const Header: React.FC = () => {
               </nav>
 
               <div className="border-t border-gray-800 px-4 py-4">
+                <RouterLink
+                  to="/tai-app"
+                  onClick={closeMobileMenu}
+                  className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-red-500"
+                >
+                  <FaDownload className="h-3.5 w-3.5" />
+                  Tải App Android
+                </RouterLink>
                 <div className="flex items-center justify-center gap-4">
                   <LanguageSwitcher dropUp />
                   <ThemeSwitcher />
