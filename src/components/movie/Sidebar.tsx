@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [], hotWeek
       {hotWeekly.length > 0 && (
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-            <span className="text-base">🔥</span>
+            <FaFire className="h-3.5 w-3.5 text-orange-500" />
             Hot Trong Tuần
           </h3>
           <div className="space-y-3">
