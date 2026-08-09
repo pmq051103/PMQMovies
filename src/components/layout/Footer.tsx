@@ -1,151 +1,177 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import {
+  FaFacebook,
+  FaTiktok,
+  FaEnvelope,
+  FaPhone,
+  FaHeart,
+} from "react-icons/fa";
+import { useTranslation } from "react-i18next";
+import Logo from "@/components/common/Logo";
+import ZaloIcon from "@/components/common/icons/ZaloIcon";
 import { ROUTES } from "@/constants";
 
-export interface LogoProps {
-  size?: "sm" | "md" | "lg";
-  withLink?: boolean;
-  className?: string;
-  animated?: boolean;
+interface FooterLink {
+  labelKey: string;
+  path: string;
 }
 
-/**
- * PMQMovies brand mark. Uses the pre-rendered PNG logo asset shipped at
- * /logo.png (transparent background, ~25KB). Adds two subtle animations
- * so the mark feels alive without being distracting:
- *   1. A very slight vertical bob (like a film reel gently turning).
- *   2. An angled "cinematic sheen" that sweeps left-to-right across the
- *      artwork every few seconds — the classic film-reel scroll feel.
- * Both can be turned off via `animated={false}` (e.g. in Loading overlays
- * where too much motion becomes noisy).
- *
- * Brand wordmark ("KHÔNG GIAN PHIM") uses a cinematic serif pairing
- * (Playfair Display + Cormorant Garamond) with a slow-moving gold
- * gradient shimmer and a hairline sprocket-style divider, so the text
- * reads as an engraved marquee rather than plain UI type. Make sure the
- * fonts are loaded once globally, e.g. in index.html:
- *
- *   <link
- *     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cormorant+Garamond:wght@500&display=swap"
- *     rel="stylesheet"
- *   />
- */
-export default function Logo({
-  size = "md",
-  withLink = true,
-  className = "",
-  animated = true,
-}: LogoProps) {
-  const heights = { sm: 48, md: 68, lg: 96 };
-  const h = heights[size];
+/** Quick links — every route we don't own yet points to `#` so the user
+ *  never lands on a 404. Real routes point to real pages (donate). */
+const quickLinks: FooterLink[] = [
+  { labelKey: "footer.about", path: "#" },
+  { labelKey: "footer.contact", path: "#" },
+  { labelKey: "footer.privacy", path: "#" },
+  { labelKey: "footer.terms", path: "#" },
+  { labelKey: "footer.donate", path: "/donate" },
+];
 
-  const textSizes = { sm: "text-sm", md: "text-lg", lg: "text-2xl" };
+const socialLinks = [
+  {
+    icon: FaFacebook,
+    href: "https://www.facebook.com/",
+    label: "Facebook",
+    hoverBg: "hover:bg-[#1877f2]",
+  },
+  {
+    icon: FaTiktok,
+    href: "https://www.tiktok.com/",
+    label: "TikTok",
+    hoverBg: "hover:bg-black",
+  },
+  {
+    icon: ZaloIcon,
+    href: "https://zalo.me/",
+    label: "Zalo",
+    hoverBg: "hover:bg-[#0068ff]",
+  },
+] as const;
 
-  const inner = (
-    <span
-      className={`relative inline-flex items-center gap-0 select-none ${className}`}
-      style={{ height: h }}
-      aria-label="Không Gian Phim"
-    >
-      <motion.img
-        src="/logo.png"
-        alt="Không Gian Phim"
-        style={{
-          height: h,
-          width: "auto",
-          filter:
-            "drop-shadow(0 0 8px rgba(212,175,55,0.5)) drop-shadow(0 0 20px rgba(212,175,55,0.2))",
-        }}
-        draggable={false}
-        {...(animated
-          ? {
-              animate: { y: [0, -1.5, 0, 1.5, 0] },
-              transition: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-            }
-          : {})}
-      />
-
-      {/* Brand name text — always visible (header + footer), regardless of viewport width */}
-      <span className={`flex flex-col justify-center -ml-6 ${textSizes[size]}`}>
-        <motion.span
-          className="font-bold tracking-[0.08em] text-transparent bg-clip-text
-            bg-[linear-gradient(90deg,#8a6212_0%,#a8791a_25%,#caa23e_50%,#a8791a_75%,#8a6212_100%)]
-            [text-shadow:0_1px_1px_rgba(255,255,255,0.4)]
-            dark:bg-[linear-gradient(90deg,#b8860b_0%,#f5d485_25%,#fff6d9_50%,#f5d485_75%,#b8860b_100%)]
-            dark:[text-shadow:0_0_18px_rgba(212,175,55,0.35)]
-            bg-[length:200%_100%]"
-          style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
-            lineHeight: 1.35,
-            paddingTop: "0.15em",
-            display: "inline-block",
-          }}
-          animate={
-            animated
-              ? { backgroundPositionX: ["0%", "100%", "0%"] }
-              : undefined
-          }
-          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        >
-          KHÔNG GIAN
-        </motion.span>
-
-        {/* Thin gold divider — echoes a film-reel sprocket line */}
-        <span
-          className="my-[3px] h-[1px] w-full
-            bg-[linear-gradient(90deg,transparent,rgba(138,98,18,0.55)_50%,transparent)]
-            dark:bg-[linear-gradient(90deg,transparent,rgba(212,175,55,0.7)_50%,transparent)]"
-        />
-
-        <span
-          className="text-[0.55em] font-medium tracking-[0.45em] text-neutral-600 dark:text-gray-400/90"
-          style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
-        >
-          PHIM
-        </span>
-      </span>
-
-      {/* Cinematic sheen — a slim diagonal white gradient that sweeps
-          across the logo, imitating light bouncing off metallic film.
-          Sits above the img via absolute positioning + mix-blend-overlay
-          so it lights the letters without darkening transparent pixels. */}
-      {animated && (
-        <motion.span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          style={{ borderRadius: 6 }}
-        >
-          <motion.span
-            className="absolute top-0 h-full"
-            style={{
-              width: "35%",
-              background:
-                "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%)",
-              mixBlendMode: "overlay",
-              filter: "blur(2px)",
-            }}
-            animate={{ left: ["-40%", "120%"] }}
-            transition={{
-              duration: 3.2,
-              repeat: Infinity,
-              repeatDelay: 2.4,
-              ease: "easeInOut",
-            }}
-          />
-        </motion.span>
-      )}
-    </span>
-  );
-
-  if (!withLink) return inner;
+const Footer: React.FC = () => {
+  const { t } = useTranslation();
+  const currentYear = new Date().getFullYear();
 
   return (
-    <Link
-      to={ROUTES.HOME}
-      className="flex-shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-      aria-label="Không Gian Phim — Trang chủ"
-    >
-      {inner}
-    </Link>
+    <footer className="always-dark border-t border-gray-800 bg-[#111] text-gray-300">
+      <div className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Column 1: Brand */}
+          <div className="space-y-4">
+            <Logo size="md" />
+            <p className="max-w-xs text-sm leading-relaxed text-gray-400">
+              {t("footer.description")}
+            </p>
+          </div>
+
+          {/* Column 2: Quick Links */}
+          <div>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-200">
+              {t("footer.quickLinks")}
+            </h3>
+            <ul className="space-y-2">
+              {quickLinks.map((link) => (
+                <li key={link.labelKey}>
+                  {link.path.startsWith("#") ? (
+                    <a
+                      href={link.path}
+                      className="text-sm text-gray-400 transition-colors duration-200 hover:text-red-500"
+                    >
+                      {t(link.labelKey)}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.path}
+                      className="text-sm text-gray-400 transition-colors duration-200 hover:text-red-500"
+                    >
+                      {t(link.labelKey)}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Social */}
+          <div>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-200">
+              {t("footer.followUs")}
+            </h3>
+            <div className="flex gap-3">
+              {socialLinks.map(({ icon: Icon, href, label, hoverBg }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-gray-400 transition-all duration-200 ${hoverBg} hover:text-white`}
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              {t("footer.socialTagline")}
+            </p>
+          </div>
+
+          {/* Column 4: Contact */}
+          <div>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-200">
+              {t("footer.contact")}
+            </h3>
+            <ul className="space-y-2.5 text-sm text-gray-400">
+              <li>
+                <a
+                  href="mailto:pmquang05112003@gmail.com"
+                  className="flex items-center gap-2 transition-colors hover:text-red-500"
+                >
+                  <FaEnvelope className="h-3.5 w-3.5 shrink-0" />
+                  pmquang05112003@gmail.com
+                </a>
+              </li>
+              <li>
+                <a
+                  href="tel:+84346991600"
+                  className="flex items-center gap-2 transition-colors hover:text-red-500"
+                >
+                  <FaPhone className="h-3.5 w-3.5 shrink-0" />
+                  0346991600
+                </a>
+              </li>
+              {/* <li>
+                <Link
+                  to={ROUTES.DONATE}
+                  className="mt-1 inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+                >
+                  <FaHeart className="h-3 w-3" />
+                  {t("footer.donateCta", "Ủng hộ Không Gian Phim")}
+                </Link>
+              </li> */}
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="mt-10 border-t border-gray-800 pt-6 text-center">
+          <p className="text-sm text-gray-500">
+            &copy; {currentYear} Không Gian Phim. {t("footer.rights")}
+          </p>
+          <p className="mt-2 text-sm text-gray-600">
+            Website được phát triển bởi{' '}
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-500 hover:text-red-400 transition-colors"
+            >
+              Phạm Minh Quang
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
   );
-}
+};
+
+export default Footer;
