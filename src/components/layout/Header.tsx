@@ -5,7 +5,6 @@ import {
   FaSearch,
   FaBars,
   FaTimes,
-  FaUserCircle,
   FaChevronDown,
   FaHeart,
   FaDownload,
@@ -145,7 +144,7 @@ const Header: React.FC = () => {
             <Logo />
 
             {/* Desktop Navigation */}
-            <nav className="hidden items-center gap-6 md:flex">
+            <nav className="hidden items-center gap-6 lg:flex">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
@@ -263,10 +262,10 @@ const Header: React.FC = () => {
                 <SearchModal isOpen={isSearchOpen} onClose={handleSearchClose} />
               </div>
 
-              {/* Favorites link */}
+              {/* Favorites link — desktop only; on mobile it's already in the hamburger menu list */}
               <RouterLink
                 to={ROUTES.FAVORITES}
-                className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
+                className="hidden rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500 lg:block"
                 aria-label={t("nav.favorites")}
                 title={t("nav.favorites")}
               >
@@ -276,32 +275,24 @@ const Header: React.FC = () => {
               {/* Download app link */}
               <RouterLink
                 to="/tai-app"
-                className="hidden items-center gap-1.5 rounded-full bg-red-600/15 px-3 py-1.5 text-xs font-semibold text-red-400 transition-colors duration-200 hover:bg-red-600/25 hover:text-red-300 sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-full bg-red-600/15 px-3 py-1.5 text-xs font-semibold text-red-400 transition-colors duration-200 hover:bg-red-600/25 hover:text-red-300 lg:inline-flex"
                 title="Tải App"
               >
                 <FaDownload className="h-3 w-3" />
                 Tải App
               </RouterLink>
 
-              <div className="hidden sm:block">
+              <div className="hidden lg:block">
                 <LanguageSwitcher />
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden lg:block">
                 <ThemeSwitcher />
               </div>
 
               <button
                 type="button"
-                className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
-                aria-label={t("nav.profile")}
-              >
-                <FaUserCircle className="h-5 w-5" />
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500 md:hidden"
+                className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500 lg:hidden"
                 aria-label={t("nav.menu")}
               >
                 <FaBars className="h-5 w-5" />
@@ -316,7 +307,7 @@ const Header: React.FC = () => {
         {isMobileMenuOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -324,7 +315,7 @@ const Header: React.FC = () => {
             />
 
             <motion.aside
-              className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-gray-900 shadow-2xl md:hidden"
+              className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-gray-900 shadow-2xl lg:hidden"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}

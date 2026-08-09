@@ -39,7 +39,13 @@ export default function Logo({
   const heights = { sm: 48, md: 68, lg: 96 };
   const h = heights[size];
 
-  const textSizes = { sm: "text-sm", md: "text-lg", lg: "text-2xl" };
+  // Text scales down on phone-width screens so it doesn't crowd the header,
+  // then returns to full size from `lg` up (tablet/desktop).
+  const textSizes = {
+    sm: "text-xs lg:text-sm",
+    md: "text-sm lg:text-lg",
+    lg: "text-lg lg:text-2xl",
+  };
 
   const inner = (
     <span
@@ -65,8 +71,8 @@ export default function Logo({
           : {})}
       />
 
-      {/* Brand name text */}
-      <span className={`hidden sm:flex flex-col justify-center -ml-6 ${textSizes[size]}`}>
+      {/* Brand name text — always visible (header + footer), regardless of viewport width */}
+      <span className={`flex flex-col justify-center -ml-6 ${textSizes[size]}`}>
         <motion.span
           className="font-bold tracking-[0.08em] text-transparent bg-clip-text
             bg-[linear-gradient(90deg,#8a6212_0%,#a8791a_25%,#caa23e_50%,#a8791a_75%,#8a6212_100%)]
