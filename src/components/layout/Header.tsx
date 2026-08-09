@@ -141,7 +141,9 @@ const Header: React.FC = () => {
       >
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
           <div className="flex h-20 items-center justify-between">
-            <Logo />
+            <div className="-ml-6 lg:ml-0">
+              <Logo />
+            </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden items-center gap-6 lg:flex">
