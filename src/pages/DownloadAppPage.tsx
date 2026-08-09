@@ -197,18 +197,22 @@ export default function DownloadAppPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mx-auto mt-12 max-w-lg rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-center"
+            className="mx-auto mt-12 max-w-lg rounded-xl border border-blue-500/30 bg-blue-950/70 p-4 text-center"
           >
-            <p className="text-sm text-yellow-200/80">
-              <strong className="text-yellow-300">iOS:</strong> Hiện chưa có trên
-              App Store. Người dùng iPhone có thể truy cập{' '}
+            <p className="text-sm text-blue-50">
+              <strong className="text-blue-300">Vì sao chưa có trên iOS?</strong>{' '}
+              Apple bắt buộc trả một khoảng chi phí lớn chỉ để được ký và cài
+              app lên iPhone — dù cài trực tiếp hay không, khác với Android cho
+              phép tải file APK và cài thẳng, miễn phí, không cần xin phép ai.
+              Dự án làm phi lợi nhuận nên hiện chưa đủ kinh phí để duy trì
+              khoản đó. Người dùng iPhone tạm dùng{' '}
               <a
                 href="/"
                 className="underline transition-colors hover:text-white"
               >
-                phiên bản web
+                bản web
               </a>{' '}
-              với đầy đủ tính năng.
+              nhé — vẫn đầy đủ tính năng, chỉ khác là mở qua Safari/Chrome thôi.
             </p>
           </motion.div>
 
