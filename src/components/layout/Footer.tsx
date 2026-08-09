@@ -4,12 +4,12 @@ import {
   FaTiktok,
   FaEnvelope,
   FaPhone,
-  FaHeart,
+  // FaHeart,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import Logo from "@/components/common/Logo";
 import ZaloIcon from "@/components/common/icons/ZaloIcon";
-import { ROUTES } from "@/constants";
+// import { ROUTES } from "@/constants";
 
 interface FooterLink {
   labelKey: string;
