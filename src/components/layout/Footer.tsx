@@ -3,7 +3,7 @@ import {
   FaFacebook,
   FaTiktok,
   FaEnvelope,
-  FaPhone,
+  // FaPhone,
   // FaHeart,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -130,7 +130,7 @@ const Footer: React.FC = () => {
                   pmquang05112003@gmail.com
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a
                   href="tel:+84346991600"
                   className="flex items-center gap-2 transition-colors hover:text-red-500"
@@ -138,7 +138,7 @@ const Footer: React.FC = () => {
                   <FaPhone className="h-3.5 w-3.5 shrink-0" />
                   0346991600
                 </a>
-              </li>
+              </li> */}
               {/* <li>
                 <Link
                   to={ROUTES.DONATE}
