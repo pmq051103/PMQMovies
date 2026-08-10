@@ -19,4 +19,5 @@ export {
   useMoviesInCountry,
   useMovies,
   useTVShows,
+  useCatalogStats,
 } from './useMovieQueries';

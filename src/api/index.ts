@@ -1,7 +1,7 @@
 export { default as axiosClient, apiGet, APIError } from './axiosClient';
 
 // Latest movies feed + generic /danh-sach/[slug] listing.
-export { getLatestMovies, getMoviesBySlug } from './homeService';
+export { getLatestMovies, getMoviesBySlug, getMovieCatalogStats } from './homeService';
 
 // Movie detail + generic movies/tv-shows listing helpers.
 export { getMovieDetail, getMovies } from './movieService';

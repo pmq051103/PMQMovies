@@ -1,24 +1,30 @@
 /**
- * Dual-source API layer.
+ * Multi-source API layer.
  *
- * Combines phimapi.com (primary — 29k+ catalog, robust filters) with
- * vsmov.com (secondary — fresher indie Vietnamese titles). Used only on
- * endpoints where merging is safe and paginating gets in the way:
- *   - Latest movies feed (Home)
- *   - Search
+ * Combines phimapi.com (primary — large catalog, robust filters),
+ * vsmov.com (secondary — fresher indie Vietnamese titles), and
+ * ophim1.com (tertiary — extra catalog + titles the other two haven't
+ * picked up yet). Used only on endpoints where merging is safe and
+ * paginating gets in the way:
+ *   - Latest movies feed (Home) + catalog stats (Home sidebar)
+ *   - Search (phimapi + vsmov only — see note on `searchMoviesDual`)
  *   - Movie detail (fallback + episode server merge)
  * List/filter pages stay single-source (phimapi) to keep pagination sane.
  */
 
 import { apiGet } from './axiosClient';
 import { vsmovGet } from './vsmovClient';
+import { ophimGet } from './ophimClient';
 import { rankAndMerge } from '@/utils/searchRank';
+import { OPHIM_IMAGE_BASE_URL } from '@/constants';
 import type {
   APIListResponse,
   MovieDetailResponse,
   MovieListItem,
   Episode,
 } from '@/types';
+
+export type MovieSource = 'phimapi' | 'vsmov' | 'ophim';
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -71,14 +77,74 @@ function extractItems(raw: unknown): MovieListItem[] {
   return [];
 }
 
+/** Tag every item in a list with which source it came from. */
+function tagSource<T>(items: T[], source: MovieSource): (T & { _source: MovieSource })[] {
+  return items.map((m) => ({ ...m, _source: source }));
+}
+
 /* ------------------------------------------------------------------ */
-/* Latest movies — merge phimapi + vsmov, dedupe                       */
+/* ophim1.com normalisation                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * ophim1.com's images live on img.ophim1.com, not phimimg.com (the CDN
+ * `IMAGE_BASE_URL` points at). Every render path in this app already
+ * treats a poster/thumb path starting with http(s):// as a finished
+ * URL and uses it as-is — so resolving ophim's paths to absolute URLs
+ * right here, once, is enough to fix them everywhere without touching
+ * every component that renders a poster.
+ */
+function resolveOphimImage(path: unknown): string {
+  if (typeof path !== 'string' || path.length === 0) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `${OPHIM_IMAGE_BASE_URL}/${path.replace(/^\//, '')}`;
+}
+
+/**
+ * ophim1.com's flat `/danh-sach/phim-moi-cap-nhat` list endpoint is
+ * leaner than phimapi's clone of it — it doesn't return `quality`,
+ * `lang`, `episode_current`/`episode_total`, `type`, or `chieurap`.
+ * That's exactly why those badges/labels were blank ("thông tin không
+ * hiển thị") for ophim-sourced titles. Fill sane defaults here so the
+ * cards render the same as any other source; the movie DETAIL page
+ * still gets the real values straight from ophim's `/phim/[slug]`.
+ */
+function normalizeOphimListItem(raw: MovieListItem): MovieListItem {
+  const isSeries = (raw as unknown as { tmdb?: { type?: string } })?.tmdb?.type === 'tv';
+  return {
+    ...raw,
+    poster_url: resolveOphimImage(raw.poster_url),
+    thumb_url: resolveOphimImage(raw.thumb_url),
+    episode_current: raw.episode_current ?? (isSeries ? 'Đang cập nhật' : 'Full'),
+    episode_total: raw.episode_total ?? '',
+    quality: raw.quality ?? 'HD',
+    lang: raw.lang ?? 'Vietsub',
+    type: raw.type ?? (isSeries ? 'series' : 'single'),
+    chieurap: raw.chieurap ?? false,
+  };
+}
+
+/** Same image-domain fix, applied to a movie-detail payload. */
+function normalizeOphimDetail(raw: MovieDetailResponse): MovieDetailResponse {
+  if (!raw?.movie) return raw;
+  return {
+    ...raw,
+    movie: {
+      ...raw.movie,
+      poster_url: resolveOphimImage(raw.movie.poster_url),
+      thumb_url: resolveOphimImage(raw.movie.thumb_url),
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Latest movies — merge phimapi + vsmov + ophim, dedupe               */
 /* ------------------------------------------------------------------ */
 
 export async function getLatestMoviesDual(
   page = 1,
 ): Promise<APIListResponse<MovieListItem>> {
-  const [primary, secondary] = await Promise.all([
+  const [primary, secondary, tertiary] = await Promise.all([
     safe(
       apiGet<APIListResponse<MovieListItem>>('/danh-sach/phim-moi-cap-nhat', {
         params: { page },
@@ -93,20 +159,82 @@ export async function getLatestMoviesDual(
           ),
         )
       : Promise.resolve(null),
+    // ophim1 has its own freshness ordering, so keep paginating it too.
+    safeRetry(() =>
+      ophimGet<APIListResponse<MovieListItem>>(
+        '/danh-sach/phim-moi-cap-nhat',
+        { params: { page } },
+      ),
+    ),
   ]);
 
-  const primaryItems = extractItems(primary);
-  const secondaryItems = extractItems(secondary);
+  const primaryItems = tagSource(extractItems(primary), 'phimapi');
+  const secondaryItems = tagSource(extractItems(secondary), 'vsmov');
+  const tertiaryItems = tagSource(
+    extractItems(tertiary).map(normalizeOphimListItem),
+    'ophim',
+  );
 
-  // Interleave: secondary items appended after primary but before any
-  // duplicates get dropped so fresh vsmov titles surface if phimapi lacks them.
-  const merged = dedupeBySlug([...primaryItems, ...secondaryItems]);
+  // Order = priority when slugs collide (near-certain for most titles,
+  // since all three sources mirror the same underlying Vietnamese movie
+  // database — see dedupeBySlug below): phimapi's data is the richest,
+  // so it wins ties; vsmov next; ophim fills in whatever's exclusive to
+  // it or missing from the other two.
+  const merged = dedupeBySlug([...primaryItems, ...secondaryItems, ...tertiaryItems]);
 
   return {
     status: true,
     items: merged,
-    pagination: primary?.pagination,
+    pagination: primary?.pagination ?? tertiary?.pagination,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Catalog stats — for the "Tổng số phim" sidebar card                 */
+/* ------------------------------------------------------------------ */
+
+export interface CatalogStats {
+  phimapi: number;
+  vsmov: number;
+  ophim: number;
+  /**
+   * Sum of each source's reported total. This is an UPPER-BOUND
+   * estimate, not the true deduped count — phimapi, vsmov, and ophim1
+   * mirror much of the same underlying catalog, and figuring out the
+   * real unique total would mean crawling & deduping every page of all
+   * three APIs client-side, which isn't practical. Framed as "phim
+   * trong kho (ước tính)" in the UI rather than an exact figure.
+   */
+  totalEstimated: number;
+}
+
+/**
+ * Cheap: one page=1 request per source, we only read `pagination.totalItems`.
+ */
+export async function getCatalogStats(): Promise<CatalogStats> {
+  const [primary, secondary, tertiary] = await Promise.all([
+    safe(
+      apiGet<APIListResponse<MovieListItem>>('/danh-sach/phim-moi-cap-nhat', {
+        params: { page: 1 },
+      }),
+    ),
+    safe(
+      vsmovGet<APIListResponse<MovieListItem>>('/danh-sach/phim-moi-cap-nhat', {
+        params: { page: 1 },
+      }),
+    ),
+    safe(
+      ophimGet<APIListResponse<MovieListItem>>('/danh-sach/phim-moi-cap-nhat', {
+        params: { page: 1 },
+      }),
+    ),
+  ]);
+
+  const phimapi = primary?.pagination?.totalItems ?? 0;
+  const vsmov = secondary?.pagination?.totalItems ?? 0;
+  const ophim = tertiary?.pagination?.totalItems ?? 0;
+
+  return { phimapi, vsmov, ophim, totalEstimated: phimapi + vsmov + ophim };
 }
 
 /* ------------------------------------------------------------------ */
@@ -190,57 +318,72 @@ function mergeEpisodes(
 }
 
 /**
- * Fetch movie detail from both sources and merge episode servers.
+ * Fetch movie detail from all three sources and merge episode servers.
  *
  * @param slug    Movie slug (URL identifier).
- * @param prefer  Optional source hint — when a search result carries
- *                `_source`, pass it here so the detail page loads the
- *                *same* movie the user clicked (avoids slug collisions
- *                where phimapi and vsmov map the same slug to different
- *                films).
+ * @param prefer  Optional source hint — when a search/list result
+ *                carries `_source`, pass it here so the detail page
+ *                loads the *same* movie the user clicked (avoids slug
+ *                collisions where sources map the same slug to
+ *                different films).
  */
 export async function getMovieDetailDual(
   slug: string,
-  prefer?: 'phimapi' | 'vsmov',
+  prefer?: MovieSource,
 ): Promise<MovieDetailResponse> {
-  const [primary, secondary] = await Promise.all([
+  const [primary, secondary, tertiaryRaw] = await Promise.all([
     safe(apiGet<MovieDetailResponse>(`/phim/${slug}`)),
     safe(vsmovGet<MovieDetailResponse>(`/phim/${slug}`)),
+    safe(ophimGet<MovieDetailResponse>(`/phim/${slug}`)),
   ]);
+  const tertiary = tertiaryRaw?.movie ? normalizeOphimDetail(tertiaryRaw) : tertiaryRaw;
 
   const hasPrimary = !!primary?.movie;
   const hasSecondary = !!secondary?.movie;
+  const hasTertiary = !!tertiary?.movie;
 
-  // When the caller explicitly prefers a source (vsmov or phimapi),
-  // ONLY merge episodes if both APIs have the same movie (matching
-  // TMDB id). Different slugs can map to entirely different films on
-  // each API, so blindly merging episodes would play the wrong video.
-  const sameTmdbId =
-    hasPrimary &&
-    hasSecondary &&
-    primary.movie.tmdb?.id &&
-    secondary.movie.tmdb?.id &&
-    String(primary.movie.tmdb.id) === String(secondary.movie.tmdb.id);
+  const bySource: Partial<Record<MovieSource, MovieDetailResponse>> = {
+    phimapi: hasPrimary ? primary! : undefined,
+    vsmov: hasSecondary ? secondary! : undefined,
+    ophim: hasTertiary ? tertiary! : undefined,
+  };
 
-  if (prefer === 'vsmov' && hasSecondary) {
-    // Only merge phimapi episodes if they're confirmed to be the same movie
-    const mergedEpisodes = sameTmdbId
-      ? mergeEpisodes(secondary.episodes, primary?.episodes)
-      : secondary.episodes ?? [];
-    return { ...secondary, episodes: mergedEpisodes };
+  /** Only merge episodes from `other` into `base` if they're confirmed
+   *  to be the same movie (matching TMDB id) — different slugs can map
+   *  to entirely different films across sources, so blindly merging
+   *  episodes would play the wrong video. */
+  function withMergedEpisodes(
+    base: MovieDetailResponse,
+    ...others: (MovieDetailResponse | undefined)[]
+  ): MovieDetailResponse {
+    let episodes = base.episodes ?? [];
+    for (const other of others) {
+      if (!other?.movie) continue;
+      const sameTmdbId =
+        base.movie.tmdb?.id &&
+        other.movie.tmdb?.id &&
+        String(base.movie.tmdb.id) === String(other.movie.tmdb.id);
+      if (sameTmdbId) episodes = mergeEpisodes(episodes, other.episodes);
+    }
+    return { ...base, episodes };
   }
 
-  // Default path: phimapi primary
-  if (hasPrimary) {
-    const mergedEpisodes = sameTmdbId
-      ? mergeEpisodes(primary.episodes, secondary?.episodes)
-      : primary.episodes ?? [];
-    return { ...primary, episodes: mergedEpisodes };
+  // Caller explicitly prefers a source (from a search/list click) —
+  // use that source as the base, merge episodes from any others that
+  // are confirmed to be the same movie.
+  if (prefer && bySource[prefer]) {
+    const base = bySource[prefer]!;
+    const others = (Object.keys(bySource) as MovieSource[])
+      .filter((s) => s !== prefer)
+      .map((s) => bySource[s]);
+    return withMergedEpisodes(base, ...others);
   }
 
-  // phimapi 404 → use vsmov if it has it.
-  if (hasSecondary) return secondary;
+  // Default priority: phimapi > vsmov > ophim.
+  if (hasPrimary) return withMergedEpisodes(primary!, secondary ?? undefined, tertiary ?? undefined);
+  if (hasSecondary) return withMergedEpisodes(secondary!, tertiary ?? undefined);
+  if (hasTertiary) return tertiary!;
 
-  // Both failed — propagate primary's shape so the UI can show error.
-  throw new Error('Movie not found on either source');
+  // All three failed — propagate an error so the UI can show it.
+  throw new Error('Movie not found on any source');
 }

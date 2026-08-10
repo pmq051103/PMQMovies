@@ -8,6 +8,7 @@ import {
   getCountries,
   getMoviesByCountry,
   getMoviesBySlug,
+  getMovieCatalogStats,
 } from '@/api';
 import type {
   MovieListItem,
@@ -20,6 +21,7 @@ import type {
   Genre,
   Country,
 } from '@/types';
+import type { MovieSource, CatalogStats } from '@/api/dualSource';
 import { IMAGE_BASE_URL, QUERY_KEYS } from '@/constants';
 
 /* ------------------------------------------------------------------ */
@@ -123,11 +125,24 @@ export function useMoviesBySlug(slug?: string, params?: FilterParams) {
 }
 
 /** Full movie/TV show detail by slug. */
-export function useMovieDetail(slug?: string, prefer?: 'phimapi' | 'vsmov') {
+export function useMovieDetail(slug?: string, prefer?: MovieSource) {
   return useQuery<MovieDetailResponse>({
     queryKey: [QUERY_KEYS.MOVIE_DETAIL, slug, prefer],
     queryFn: () => getMovieDetail(slug!, prefer),
     enabled: !!slug,
+  });
+}
+
+/**
+ * Aggregate "how many movies are in the catalog" stats (Home sidebar).
+ * Cheap (1 lightweight request per source) but still worth caching for
+ * a while — the number doesn't need to be second-by-second fresh.
+ */
+export function useCatalogStats() {
+  return useQuery<CatalogStats>({
+    queryKey: [QUERY_KEYS.CATALOG_STATS],
+    queryFn: getMovieCatalogStats,
+    staleTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 

@@ -23,6 +23,18 @@ export const IMAGE_BASE_URL: string =
   (import.meta.env.VITE_IMAGE_BASE_URL as string | undefined) ??
   'https://phimimg.com';
 
+/**
+ * Image CDN for the tertiary source (ophim1.com). ophim images are
+ * hosted on their own domain, NOT phimimg.com — using `IMAGE_BASE_URL`
+ * for them 404s, which is why ophim-sourced posters/thumbs looked
+ * "missing" before. Resolved once in `dualSource.ts` so every existing
+ * render path (which already accepts a ready-made http(s):// URL as-is)
+ * just works without changes.
+ */
+export const OPHIM_IMAGE_BASE_URL: string =
+  (import.meta.env.VITE_OPHIM_IMAGE_BASE_URL as string | undefined) ??
+  'https://img.ophim1.com/uploads/movies';
+
 export const API_TIMEOUT = 15000;
 
 /**
@@ -110,6 +122,7 @@ export const QUERY_KEYS = {
   COUNTRIES: 'countries',
   MOVIES_BY_COUNTRY: 'moviesByCountry',
   ACTOR_DETAIL: 'actorDetail',
+  CATALOG_STATS: 'catalogStats',
 } as const;
 
 /* ------------------------------------------------------------------ */

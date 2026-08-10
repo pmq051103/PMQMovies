@@ -9,6 +9,13 @@
   status = 200
   force = true
 
+# Tertiary API — ophim1.com (bypasses CORS in prod).
+[[redirects]]
+  from = "/api3/*"
+  to = "https://ophim1.com/:splat"
+  status = 200
+  force = true
+
 # Primary API — phimapi.com (bypasses CORS in prod).
 [[redirects]]
   from = "/api/*"

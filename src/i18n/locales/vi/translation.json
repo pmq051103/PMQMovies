@@ -65,7 +65,9 @@
     "topBlockbuster": "Top 10 Bom Tấn",
     "upcoming": "Phim Sắp Chiếu",
     "phim4k": "Phim 4K",
-    "subteam": "Subteam Đề Cử"
+    "subteam": "Subteam Đề Cử",
+    "totalMovies": "Tổng Số Phim Hiện Tại",
+    "totalMoviesNote": "Tổng hợp từ nhiều nguồn, có thể trùng lặp một phần"
   },
   "movie": {
     "watchNow": "Xem Ngay",

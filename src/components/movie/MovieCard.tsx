@@ -41,13 +41,13 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
     return ep;
   })();
 
-  // When the movie came from vsmov (dual-source search), append
-  // ?src=vsmov so the detail page loads the correct film even when
-  // both APIs have different movies under the same slug.
+  // When the movie came from vsmov or ophim (dual/multi-source search),
+  // append ?src=<source> so the detail page loads the correct film even
+  // when multiple APIs have different movies under the same slug.
   const source = (movie as MovieListItem & { _source?: string })._source;
   const detailUrl =
-    source === 'vsmov'
-      ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=vsmov`
+    source && source !== 'phimapi'
+      ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=${source}`
       : `${ROUTES.MOVIE_DETAIL}/${movie.slug}`;
 
   return (

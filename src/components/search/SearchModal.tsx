@@ -100,8 +100,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
   const handleResultClick = useCallback(
     (movie: { slug: string; _source?: string }) => {
-      const url = movie._source === 'vsmov'
-        ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=vsmov`
+      const url = movie._source && movie._source !== 'phimapi'
+        ? `${ROUTES.MOVIE_DETAIL}/${movie.slug}?src=${movie._source}`
         : `${ROUTES.MOVIE_DETAIL}/${movie.slug}`;
       navigate(url);
       window.scrollTo({ top: 0 });

@@ -65,7 +65,9 @@
     "topBlockbuster": "Top 10 Blockbusters",
     "upcoming": "Upcoming Movies",
     "phim4k": "4K Movies",
-    "subteam": "Subteam Picks"
+    "subteam": "Subteam Picks",
+    "totalMovies": "Total Movies Available",
+    "totalMoviesNote": "Combined from multiple sources, may partially overlap"
   },
   "movie": {
     "watchNow": "Watch Now",

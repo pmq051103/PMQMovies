@@ -1,5 +1,5 @@
 import { apiGet } from './axiosClient';
-import { getMovieDetailDual } from './dualSource';
+import { getMovieDetailDual, type MovieSource } from './dualSource';
 import { API_ENDPOINTS } from '@/constants';
 import type {
   MovieListItem,
@@ -9,12 +9,12 @@ import type {
 } from '@/types';
 
 /**
- * Dual-source movie detail: phimapi primary, vsmov fallback + episode
- * server merge (extra playback sources).
+ * Multi-source movie detail: phimapi primary, vsmov + ophim1 fallback
+ * and episode server merge (extra playback sources).
  */
 export async function getMovieDetail(
   slug: string,
-  prefer?: 'phimapi' | 'vsmov',
+  prefer?: MovieSource,
 ): Promise<MovieDetailResponse> {
   return getMovieDetailDual(slug, prefer);
 }

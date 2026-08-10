@@ -1,5 +1,5 @@
 import { apiGet } from "@/api/axiosClient";
-import { getLatestMoviesDual } from "@/api/dualSource";
+import { getLatestMoviesDual, getCatalogStats } from "@/api/dualSource";
 import { LIST_SLUGS } from "@/constants";
 import type {
   APIListResponse,
@@ -7,16 +7,22 @@ import type {
   MovieListItem,
   PageParams,
 } from "@/types";
+import type { CatalogStats } from "@/api/dualSource";
 
 /**
  * Fetch the latest updated movies for the homepage feed.
- * Dual-sourced: phimapi (primary catalog) + vsmov (fresh titles),
- * deduped by slug. See `dualSource.ts`.
+ * Multi-sourced: phimapi (primary catalog) + vsmov (fresh titles) +
+ * ophim1 (extra catalog), deduped by slug. See `dualSource.ts`.
  */
 export async function getLatestMovies(
   page = 1,
 ): Promise<APIListResponse<MovieListItem>> {
   return getLatestMoviesDual(page);
+}
+
+/** Total-movie-count stats across all 3 sources, for the Home sidebar. */
+export async function getMovieCatalogStats(): Promise<CatalogStats> {
+  return getCatalogStats();
 }
 
 /**
@@ -45,6 +51,7 @@ export async function getMoviesBySlug(
 export const homeService = {
   getLatestMovies,
   getMoviesBySlug,
+  getMovieCatalogStats,
 };
 
 export default homeService;

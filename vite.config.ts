@@ -14,9 +14,10 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    // Dual-API proxy to bypass CORS in dev:
+    // Triple-API proxy to bypass CORS in dev:
     //   /api    → phimapi.com (primary — large catalog)
     //   /api2   → vsmov.com/api (secondary — fresh Vietnamese titles)
+    //   /api3   → ophim1.com (tertiary — extra catalog + earliest updates)
     // In production, vercel.json / netlify.toml mirror these rewrites.
     proxy: {
       "/api2": {
@@ -24,6 +25,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api2/, "/api"),
+      },
+      "/api3": {
+        target: "https://ophim1.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api3/, ""),
       },
       "/api": {
         target: "https://phimapi.com",
@@ -41,6 +48,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api2/, "/api"),
+      },
+      "/api3": {
+        target: "https://ophim1.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api3/, ""),
       },
       "/api": {
         target: "https://phimapi.com",

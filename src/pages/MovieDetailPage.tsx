@@ -39,10 +39,10 @@ export default function MovieDetailPage() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
 
-  // When a search result carries _source info, the MovieCard appends
-  // ?src=vsmov so the detail page loads the correct movie even when
-  // both APIs map the same slug to different films.
-  const preferSource = searchParams.get('src') as 'phimapi' | 'vsmov' | null;
+  // When a search/list result carries _source info, the card appends
+  // ?src=vsmov or ?src=ophim so the detail page loads the correct movie
+  // even when multiple APIs map the same slug to different films.
+  const preferSource = searchParams.get('src') as 'phimapi' | 'vsmov' | 'ophim' | null;
 
   const { data, isLoading, isError, refetch } = useMovieDetail(
     slug,
