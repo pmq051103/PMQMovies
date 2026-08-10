@@ -133,6 +133,11 @@ export default function MovieDetailPage() {
   const backdropUrl = getImageUrl(movie.thumb_url) || getImageUrl(movie.poster_url);
   const posterUrl = getMoviePoster(movie.poster_url, movie.thumb_url);
   const isSeries = movie.type === 'series';
+  // Một phim được coi là "có tập" nếu có dữ liệu episode thực sự (server_data),
+  // bất kể type là series/hoathinh/tvshows/single — vì hoạt hình và TV shows
+  // nhiều tập nhưng type khác 'series' vẫn cần hiện danh sách tập.
+  const hasEpisodes =
+    episodes.length > 0 && episodes.some((ep) => ep.server_data?.length > 0);
 
   return (
     <>
@@ -361,7 +366,7 @@ export default function MovieDetailPage() {
                 animate="visible"
                 custom={2}
               >
-                {episodes.length > 0 && episodes.some((ep) => ep.server_data?.length > 0) && (
+                {hasEpisodes && (
                 <button
                   type="button"
                   onClick={() => {
@@ -431,7 +436,7 @@ export default function MovieDetailPage() {
           )}
 
           {/* ---- Episodes ---- */}
-          {isSeries && episodes.length > 0 && (
+          {hasEpisodes && (
             <motion.section
               className="mt-12"
               variants={fadeIn}

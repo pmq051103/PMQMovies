@@ -106,7 +106,7 @@ const EpisodeList: React.FC<EpisodeListProps> = ({
               ? ""
               : compact
                 ? "grid grid-cols-3 gap-1.5 sm:grid-cols-4 max-h-[420px] overflow-y-auto pr-1"
-                : "grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
+                : "grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 max-h-[420px] overflow-y-auto pr-1"
           }
         >
           {isSingleEpisode ? (

@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [], hotWeek
               {formatNumber(catalogStats?.totalEstimated ?? 0)}
             </p>
             <p className="mt-1 text-[11px] text-gray-500">
-              {t('home.totalMoviesNote', 'Tổng hợp từ nhiều nguồn, có thể trùng lặp một phần')}
+              {t('home.totalMoviesNote', 'Dữ liệu được tổng hợp từ nhiều nguồn.')}
             </p>
           </>
         )}
