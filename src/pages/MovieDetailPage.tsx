@@ -135,9 +135,14 @@ export default function MovieDetailPage() {
   const isSeries = movie.type === 'series';
   // Một phim được coi là "có tập" nếu có dữ liệu episode thực sự (server_data),
   // bất kể type là series/hoathinh/tvshows/single — vì hoạt hình và TV shows
-  // nhiều tập nhưng type khác 'series' vẫn cần hiện danh sách tập.
+  // nhiều tập nhưng type khác 'series' vẫn cần hiện danh sách tập. Dùng cho
+  // nút "Xem ngay" — phim lẻ (1 tập) vẫn cần nút này để bấm xem.
   const hasEpisodes =
     episodes.length > 0 && episodes.some((ep) => ep.server_data?.length > 0);
+  // Chỉ hiện HẲN section "Danh sách tập" khi phim thực sự có nhiều hơn 1 tập
+  // để chọn — phim lẻ chỉ có đúng 1 tập "Full" thì khỏi cần hiện, tránh chữ
+  // "Xem phim" to đùng một mình dưới phần nội dung phim.
+  const hasEpisodeList = episodes.some((ep) => (ep.server_data?.length ?? 0) > 1);
 
   return (
     <>
@@ -436,7 +441,7 @@ export default function MovieDetailPage() {
           )}
 
           {/* ---- Episodes ---- */}
-          {hasEpisodes && (
+          {hasEpisodeList && (
             <motion.section
               className="mt-12"
               variants={fadeIn}
