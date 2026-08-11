@@ -176,6 +176,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* CategoryBanner breaks out to full viewport width via 100vw + negative
+     margins (see CategoryBanner.tsx) so it bleeds edge-to-edge regardless
+     of the page's max-width container. 100vw can be a hair wider than the
+     visible viewport on some browsers when a scrollbar is present, which
+     would otherwise introduce a tiny horizontal scroll — this prevents it. */
+  overflow-x: hidden;
 }
 
 * {

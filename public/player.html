@@ -67,6 +67,26 @@
         Default: 'Mặc định',
       },
     },
+    layers: [
+      {
+        name: 'kgp-logo',
+        html:
+          '<a id="kgp-logo-link" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);text-decoration:none;cursor:pointer;">' +
+          '<img src="/logo.png" alt="Không Gian Phim" style="width:20px;height:20px;border-radius:999px;object-fit:cover;" />' +
+          '<span style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;">Không Gian Phim</span>' +
+          '</a>',
+        style: {
+          position: 'absolute',
+          top: '12px',
+          left: '12px',
+          zIndex: 30,
+          pointerEvents: 'auto',
+        },
+        click: function () {
+          postToParent({ action: 'navigateHome' });
+        },
+      },
+    ],
     controls: [
       {
         position: 'left',

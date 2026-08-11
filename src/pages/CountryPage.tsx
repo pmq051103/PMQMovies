@@ -202,7 +202,15 @@ function CountryDetailView({ slug }: { slug: string }) {
         title={countryName}
         description={`Phim ${countryName} chọn lọc, đa dạng thể loại — Vietsub, thuyết minh, lồng tiếng, cập nhật mới mỗi ngày để bạn khám phá điện ảnh ${countryName} dễ dàng hơn.`}
         totalItems={data?.pagination?.totalItems}
-        backdropUrl={displayMovies[0]?.thumb_url ?? displayMovies[0]?.poster_url}
+        backdropUrl={
+          // Dùng phim thứ 2 làm ảnh nền banner, không dùng phim đầu tiên —
+          // phim đầu tiên là "hero" của khối SpotlightGrid to bên dưới, dùng
+          // chung ảnh sẽ bị trùng thumbnail giữa banner và khối đó.
+          displayMovies[1]?.thumb_url ??
+          displayMovies[1]?.poster_url ??
+          displayMovies[0]?.thumb_url ??
+          displayMovies[0]?.poster_url
+        }
         icon={FaGlobeAsia}
       />
 

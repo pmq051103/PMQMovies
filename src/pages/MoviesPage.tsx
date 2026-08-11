@@ -125,7 +125,15 @@ export default function MoviesPage() {
             title={t('nav.movies')}
             description="Kho phim lẻ đa dạng thể loại — hành động, tình cảm, kinh dị, hài hước, viễn tưởng... Vietsub, thuyết minh, lồng tiếng chất lượng cao, cập nhật liên tục mỗi ngày."
             totalItems={data?.pagination?.totalItems}
-            backdropUrl={displayMovies[0]?.thumb_url ?? displayMovies[0]?.poster_url}
+            backdropUrl={
+              // Dùng phim thứ 2 làm ảnh nền banner, không dùng phim đầu tiên —
+              // phim đầu tiên là "hero" của khối SpotlightGrid to bên dưới, dùng
+              // chung ảnh sẽ bị trùng thumbnail giữa banner và khối đó.
+              displayMovies[1]?.thumb_url ??
+              displayMovies[1]?.poster_url ??
+              displayMovies[0]?.thumb_url ??
+              displayMovies[0]?.poster_url
+            }
           />
 
           {/* Inline search + filter toggle */}

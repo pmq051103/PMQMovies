@@ -127,7 +127,15 @@ export default function NowPlayingPage() {
             title={t('nav.nowPlaying')}
             description="Những bom tấn đang và sắp ra rạp — cập nhật sớm, chất lượng cao, Vietsub chuẩn rạp, xem online miễn phí ngay khi có bản đẹp."
             totalItems={data?.pagination?.totalItems}
-            backdropUrl={displayMovies[0]?.thumb_url ?? displayMovies[0]?.poster_url}
+            backdropUrl={
+              // Dùng phim thứ 2 làm ảnh nền banner, không dùng phim đầu tiên —
+              // phim đầu tiên là "hero" của khối SpotlightGrid to bên dưới, dùng
+              // chung ảnh sẽ bị trùng thumbnail giữa banner và khối đó.
+              displayMovies[1]?.thumb_url ??
+              displayMovies[1]?.poster_url ??
+              displayMovies[0]?.thumb_url ??
+              displayMovies[0]?.poster_url
+            }
             icon={FaFire}
           />
 

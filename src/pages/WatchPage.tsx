@@ -232,10 +232,15 @@ export default function WatchPage() {
           duration: e.data.duration ?? 0,
         };
       }
+      // Sent when the logo badge rendered inside player.html is clicked —
+      // navigate via the router instead of a hard page reload.
+      if (e.data.action === 'navigateHome') {
+        navigate(ROUTES.HOME);
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [navigate]);
 
   // Reset progress when episode changes so stale values don't carry over
   useEffect(() => {
@@ -525,22 +530,32 @@ export default function WatchPage() {
 
                   {/* Logo watermark — top-left corner of video, styled as a
                       rounded pill badge (icon + site name), matching the
-                      khophim.org-style branding reference. */}
-                  <Link
-                    to={ROUTES.HOME}
-                    className="pointer-events-auto absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/55 px-2 py-1 backdrop-blur-sm transition-colors hover:bg-black/70"
-                    title="Không Gian Phim"
-                  >
-                    <img
-                      src="/logo.png"
-                      alt="Không Gian Phim"
-                      className="h-5 w-5 rounded-full object-cover sm:h-6 sm:w-6"
-                      draggable={false}
-                    />
-                    <span className="text-xs font-semibold text-white drop-shadow-sm sm:text-sm">
-                      Không Gian Phim
-                    </span>
-                  </Link>
+                      khophim.org-style branding reference.
+                      Only rendered for the cross-origin fallback embed. Our
+                      own /player.html embed (the normal case) renders this
+                      same badge itself, as an Artplayer *layer* living
+                      inside the element that goes fullscreen — that's the
+                      only way the logo survives the player's own fullscreen
+                      button, since that button fullscreens the iframe's
+                      internal player container, not this parent div. If we
+                      also drew it here the two badges would double up. */}
+                  {!embedUrl.startsWith('/player.html') && (
+                    <Link
+                      to={ROUTES.HOME}
+                      className="pointer-events-auto absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/55 px-2 py-1 backdrop-blur-sm transition-colors hover:bg-black/70"
+                      title="Không Gian Phim"
+                    >
+                      <img
+                        src="/logo.png"
+                        alt="Không Gian Phim"
+                        className="h-5 w-5 rounded-full object-cover sm:h-6 sm:w-6"
+                        draggable={false}
+                      />
+                      <span className="text-xs font-semibold text-white drop-shadow-sm sm:text-sm">
+                        Không Gian Phim
+                      </span>
+                    </Link>
+                  )}
                 </div>
               </div>
 
@@ -695,9 +710,15 @@ export default function WatchPage() {
                   meaningless "Xem Phim" button on a page you're already
                   watching. Instead, show a subtle single-episode notice. */}
               {(() => {
-                const hasMultipleEpisodes =
-                  episodes.length > 1 ||
-                  (currentServer?.server_data.length ?? 0) > 1;
+                // A real episode list only matters when some server actually
+                // has more than one episode to pick between. Having several
+                // servers (Vietsub, Lồng Tiếng, ...) that each hold just one
+                // "Full" entry is NOT a multi-episode movie — that case is
+                // already covered by the server tabs above, so the episode
+                // list here would just be a redundant duplicate.
+                const hasMultipleEpisodes = episodes.some(
+                  (ep) => (ep.server_data?.length ?? 0) > 1,
+                );
 
                 if (!hasMultipleEpisodes) {
                   return (
@@ -721,9 +742,10 @@ export default function WatchPage() {
               })()}
             </div>
 
-            {/* Right sidebar (desktop only) — only when there are real episodes */}
-            {(episodes.length > 1 ||
-              (currentServer?.server_data.length ?? 0) > 1) && (
+            {/* Right sidebar (desktop only) — only when some server actually
+                has more than one episode (see comment above for why having
+                multiple servers alone doesn't count). */}
+            {episodes.some((ep) => (ep.server_data?.length ?? 0) > 1) && (
               <div className="hidden w-80 shrink-0 lg:block xl:w-96">
                 <div className="sticky top-20">
                   <EpisodeList
