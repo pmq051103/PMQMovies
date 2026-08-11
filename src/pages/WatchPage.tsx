@@ -102,6 +102,10 @@ export default function WatchPage() {
   const svParam = searchParams.get('sv');
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  // Wraps the iframe + logo watermark together so our own fullscreen
+  // shortcut ('f' key) fullscreens both — otherwise fullscreening just
+  // the iframe leaves the logo (a sibling element) behind and hidden.
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // Track playback progress received from the same-origin player
   // wrapper via postMessage. Updated on every timeupdate event and
@@ -313,7 +317,7 @@ export default function WatchPage() {
         case 'F':
           e.preventDefault();
           try {
-            iframeRef.current?.requestFullscreen();
+            playerContainerRef.current?.requestFullscreen();
           } catch {
             /* fullscreen not supported */
           }
@@ -486,6 +490,7 @@ export default function WatchPage() {
                 }
               >
                 <div
+                  ref={playerContainerRef}
                   className={
                     cinemaMode
                       ? 'relative w-full max-w-[100vw]'

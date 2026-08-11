@@ -24,7 +24,7 @@ export default function SectionTitle({ title, viewAllLink, className = '' }: Sec
         <h2 className="text-xl font-bold text-white sm:text-2xl">{title}</h2>
         <span
           aria-hidden
-          className="absolute bottom-0 left-0 h-[3px] w-14 rounded-full bg-gradient-to-r from-red-500 to-red-500/0 sm:w-20"
+          className="absolute bottom-0 left-0 h-[3px] w-24 rounded-full bg-gradient-to-r from-red-500 to-red-500/0 sm:w-32"
         />
       </div>
       {viewAllLink && (

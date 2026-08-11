@@ -12,7 +12,7 @@ interface StatCard {
 }
 
 interface StatsBlockProps {
-  /** Deduped total across all 3 sources (phimapi + vsmov + ophim1). */
+  /** Combined total across vsmov + ophim1 (phimapi excluded). */
   totalMovies?: number;
   /** Movies publicly listed/browsable — sourced from ophim1's catalog total. */
   publishedCount?: number;
@@ -24,7 +24,7 @@ interface StatsBlockProps {
  * "Verified system stats" block, styled after khophim.org's transparency
  * strip — every number here is real, drawn straight from data this app
  * already fetches (nothing is hardcoded marketing copy):
- *   - Unique titles: combined catalog total across phimapi + vsmov + ophim1
+ *   - Unique titles: combined catalog total across vsmov + ophim1 only
  *     (see CatalogStats.totalEstimated in dualSource.ts).
  *   - Published: ophim1's reported catalog total (largest source).
  *   - Has playback source: phimapi's reported catalog total.
@@ -46,7 +46,7 @@ export default function StatsBlock({
       icon: FaBoxOpen,
       value: total > 0 ? fmt(total) : '—',
       label: 'Đầu phim duy nhất',
-      sublabel: 'Tổng hợp từ tất cả nguồn',
+      sublabel: 'Không tính trùng slug',
       accent: 'from-amber-500/15 via-amber-500/5 to-transparent',
       glow: 'text-amber-400 bg-amber-500/15',
     },

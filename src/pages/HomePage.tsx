@@ -10,6 +10,7 @@ import {
   MovieCard,
   SpotlightGrid,
   TopRankingRow,
+  UpcomingRow,
 } from '@/components/movie';
 import PromoBanner from '@/components/movie/PromoBanner';
 import StatsBlock from '@/components/movie/StatsBlock';
@@ -112,6 +113,10 @@ export default function HomePage() {
     page: 1, sort_field: 'view_total', sort_type: 'desc', year: currentYear,
   });
   const { data: subteamData } = useMoviesBySlug('subteam', { page: 1 });
+  // Phim sắp cập nhật — trailer-only titles (status: "trailer")
+  const { data: upcomingData } = useMoviesBySlug('phim-sap-chieu', {
+    page: 1, status: 'trailer',
+  });
 
   /* ── Derived data ── */
   const heroBannerMovies = useMemo(
@@ -395,6 +400,17 @@ export default function HomePage() {
                 title={t('home.topMovies', 'Top 10 Phim Lẻ')}
                 movies={topMoviesByViews.items}
                 viewAllLink={ROUTES.MOVIES}
+              />
+            </motion.section>
+          )}
+
+          {/* ── Phim Sắp Cập Nhật — trailer-only, horizontal scroll (not grid) ── */}
+          {upcomingData?.items && upcomingData.items.length > 0 && (
+            <motion.section variants={itemVariants}>
+              <UpcomingRow
+                title={t('home.upcoming', 'Phim Sắp Cập Nhật')}
+                movies={upcomingData.items}
+                viewAllLink={ROUTES.MOVIES + '?status=trailer'}
               />
             </motion.section>
           )}

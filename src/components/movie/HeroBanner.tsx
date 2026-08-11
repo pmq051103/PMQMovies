@@ -94,7 +94,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
   const current = slides[currentIndex];
 
   return (
-    <section className="always-dark relative w-full min-h-[500px] h-[60vh] overflow-hidden bg-black">
+    <section className="always-dark relative w-full min-h-[560px] h-[70vh] sm:h-[75vh] max-h-[820px] overflow-hidden bg-black">
       {/* Background image with AnimatePresence */}
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
@@ -126,7 +126,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
 
       {/* Content */}
       <div className="absolute inset-0 flex items-end">
-        <div className="w-full max-w-7xl mx-auto px-4 pb-20 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 pb-14 sm:pb-16 lg:pb-20 sm:px-6 lg:px-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={current._id}
