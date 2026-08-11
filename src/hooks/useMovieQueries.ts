@@ -344,15 +344,37 @@ export function useMoviesByCountry(slug?: string, params?: PageParams) {
  *
  * Priority (most-specific first): genre > country > year > slug.
  */
+type ListKind = "phim-le" | "phim-bo" | "hoathinh" | "tv-shows";
+
+const TYPE_FOR_KIND: Record<ListKind, string> = {
+  "phim-le": "single",
+  "phim-bo": "series",
+  hoathinh: "hoathinh",
+  "tv-shows": "tvshows",
+};
+
+/**
+ * The `/danh-sach/[slug]` endpoint's slug doesn't always match our internal
+ * `kind` identifier — notably hoạt hình is served at `/danh-sach/hoat-hinh`
+ * (with a dash), not `/danh-sach/hoathinh`. Kept separate from `kind` (used
+ * for the `type` filter value) so each stays correct for its own purpose.
+ */
+const DANH_SACH_SLUG_FOR_KIND: Record<ListKind, string> = {
+  "phim-le": "phim-le",
+  "phim-bo": "phim-bo",
+  hoathinh: "hoat-hinh",
+  "tv-shows": "tv-shows",
+};
+
 function pickFilteredEndpoint(
-  kind: "phim-le" | "phim-bo",
+  kind: ListKind,
   params?: FilterParams,
 ): { url: string; params: Record<string, unknown> } {
   const p = { ...(params ?? {}) };
   const genre = p.category as string | undefined;
   const country = p.country as string | undefined;
   const year = p.year as string | number | undefined;
-  const typeForKind = kind === "phim-le" ? "single" : "series";
+  const typeForKind = TYPE_FOR_KIND[kind];
 
   delete (p as Record<string, unknown>).category;
   delete (p as Record<string, unknown>).country;
@@ -382,13 +404,13 @@ function pickFilteredEndpoint(
   }
 
   return {
-    url: `/v1/api/danh-sach/${kind}`,
+    url: `/v1/api/danh-sach/${DANH_SACH_SLUG_FOR_KIND[kind]}`,
     params: { ...p, type: p.type ?? typeForKind },
   };
 }
 
 async function fetchFilteredMovies(
-  kind: "phim-le" | "phim-bo",
+  kind: ListKind,
   params?: FilterParams,
 ): Promise<APIListResponse<MovieListItem>> {
   const { url, params: qs } = pickFilteredEndpoint(kind, params);
@@ -410,6 +432,24 @@ export function useTVShows(params?: FilterParams) {
   return useQuery({
     queryKey: [QUERY_KEYS.TV_SHOWS, params],
     queryFn: () => fetchFilteredMovies("phim-bo", params),
+    select: selectListResponse,
+  });
+}
+
+/** Animation / hoạt hình with smart filter routing. */
+export function useAnime(params?: FilterParams) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.ANIME, params],
+    queryFn: () => fetchFilteredMovies("hoathinh", params),
+    select: selectListResponse,
+  });
+}
+
+/** TV shows (game shows / reality / talk shows) with smart filter routing. */
+export function useTvShowPrograms(params?: FilterParams) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.TV_SHOW_PROGRAMS, params],
+    queryFn: () => fetchFilteredMovies("tv-shows", params),
     select: selectListResponse,
   });
 }

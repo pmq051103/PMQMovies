@@ -72,12 +72,22 @@ const Header: React.FC = () => {
     [countries, countryQuery],
   );
 
+  // Desktop nav — Favorites is intentionally left out here: the heart
+  // icon in the right-side action cluster already covers it, so the
+  // text link would just be a redundant duplicate.
   const navItems: NavItem[] = [
     { label: t("nav.home"), path: ROUTES.HOME },
     { label: t("nav.movies"), path: ROUTES.MOVIES },
     { label: t("nav.tvShows"), path: ROUTES.TV_SHOWS },
+    { label: t("nav.anime"), path: ROUTES.ANIME },
+    { label: t("nav.tvShowProgram"), path: ROUTES.TV_SHOW_PROGRAMS },
     { label: t("nav.nowPlaying"), path: ROUTES.NOW_PLAYING },
     { label: t("nav.topRated"), path: ROUTES.TOP_RATED },
+  ];
+
+  // Mobile drawer keeps Favorites — there's no separate icon button there.
+  const mobileNavItems: NavItem[] = [
+    ...navItems,
     { label: t("nav.favorites"), path: ROUTES.FAVORITES },
   ];
 
@@ -104,8 +114,8 @@ const Header: React.FC = () => {
   }, []);
 
   const navLinkClasses = ({ isActive }: { isActive: boolean }): string =>
-    `text-sm font-medium transition-colors duration-200 hover:text-red-500 ${
-      isActive ? "text-red-500" : "text-gray-300"
+    `relative py-1 text-[13px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
+      isActive ? "text-white" : "text-gray-300 hover:text-white"
     }`;
 
   const mobileNavLinkClasses = ({ isActive }: { isActive: boolean }): string =>
@@ -146,7 +156,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden items-center gap-6 lg:flex">
+            <nav className="hidden items-center gap-5 xl:gap-6 lg:flex">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
@@ -154,7 +164,18 @@ const Header: React.FC = () => {
                   end={item.path === ROUTES.HOME}
                   className={navLinkClasses}
                 >
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      {item.label}
+                      {isActive && (
+                        <motion.span
+                          layoutId="nav-underline"
+                          className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-red-500"
+                          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                        />
+                      )}
+                    </>
+                  )}
                 </NavLink>
               ))}
 
@@ -175,8 +196,8 @@ const Header: React.FC = () => {
                       onClick={() =>
                         setOpenDropdown((prev) => (prev === key ? null : key))
                       }
-                      className={`flex items-center gap-1 text-sm font-medium transition-colors duration-200 hover:text-red-500 ${
-                        isOpen ? "text-red-500" : "text-gray-300"
+                      className={`flex items-center gap-1 text-[13px] font-semibold uppercase tracking-wide transition-colors duration-200 ${
+                        isOpen ? "text-white" : "text-gray-300 hover:text-white"
                       }`}
                       aria-haspopup="true"
                       aria-expanded={isOpen}
@@ -184,7 +205,7 @@ const Header: React.FC = () => {
                       {label}
                       <FaChevronDown
                         className={`h-2.5 w-2.5 transition-transform duration-200 ${
-                          isOpen ? "rotate-180" : ""
+                          isOpen ? "rotate-180 text-red-500" : ""
                         }`}
                       />
                     </button>
@@ -249,14 +270,15 @@ const Header: React.FC = () => {
             </nav>
 
             {/* Right Side Actions */}
-            <div className="flex items-center gap-3">
-              {/* Search button + dropdown wrapper */}
+            <div className="flex items-center gap-2.5">
+              {/* Search button + dropdown wrapper — single instance, always visible */}
               <div className="relative">
                 <button
                   type="button"
                   onClick={handleSearchOpen}
-                  className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
+                  className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-white"
                   aria-label={t("search.open")}
+                  title={t("search.open")}
                 >
                   <FaSearch className="h-4 w-4" />
                 </button>
@@ -264,37 +286,38 @@ const Header: React.FC = () => {
                 <SearchModal isOpen={isSearchOpen} onClose={handleSearchClose} />
               </div>
 
-              {/* Favorites link — desktop only; on mobile it's already in the hamburger menu list */}
-              <RouterLink
-                to={ROUTES.FAVORITES}
-                className="hidden rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500 lg:block"
-                aria-label={t("nav.favorites")}
-                title={t("nav.favorites")}
-              >
-                <FaHeart className="h-4 w-4" />
-              </RouterLink>
+              {/* Grouped action pill — favorites, language, theme (desktop only) */}
+              <div className="hidden items-center gap-0.5 rounded-full border border-white/10 bg-white/5 p-1 lg:flex">
+                {/* Favorites link — icon-only, so the "Yêu Thích" label isn't duplicated in the nav */}
+                <RouterLink
+                  to={ROUTES.FAVORITES}
+                  className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
+                  aria-label={t("nav.favorites")}
+                  title={t("nav.favorites")}
+                >
+                  <FaHeart className="h-4 w-4" />
+                </RouterLink>
+
+                <div className="mx-1 h-4 w-px bg-white/10" />
+
+                <LanguageSwitcher />
+                <ThemeSwitcher />
+              </div>
 
               {/* Download app link */}
               <RouterLink
                 to="/tai-app"
-                className="hidden items-center gap-1.5 rounded-full bg-red-600/15 px-3 py-1.5 text-xs font-semibold text-red-400 transition-colors duration-200 hover:bg-red-600/25 hover:text-red-300 lg:inline-flex"
+                className="hidden items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-2 text-xs font-bold text-white shadow-[0_0_0_1px_rgba(220,38,38,0.4)] transition-colors duration-200 hover:bg-red-500 lg:inline-flex"
                 title="Tải App"
               >
                 <FaDownload className="h-3 w-3" />
                 Tải App
               </RouterLink>
 
-              <div className="hidden lg:block">
-                <LanguageSwitcher />
-              </div>
-              <div className="hidden lg:block">
-                <ThemeSwitcher />
-              </div>
-
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-red-500 lg:hidden"
+                className="rounded-full p-2 text-gray-300 transition-colors duration-200 hover:bg-white/10 hover:text-white lg:hidden"
                 aria-label={t("nav.menu")}
               >
                 <FaBars className="h-5 w-5" />
@@ -337,7 +360,7 @@ const Header: React.FC = () => {
 
               <nav className="flex-1 overflow-y-auto px-3 py-4">
                 <ul className="space-y-1">
-                  {navItems.map((item) => (
+                  {mobileNavItems.map((item) => (
                     <li key={item.path}>
                       <NavLink
                         to={item.path}

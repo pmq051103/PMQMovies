@@ -428,6 +428,7 @@ export default function HomePage() {
               <SpotlightGrid
                 title={t('home.anime')}
                 movies={animeSpotlight}
+                viewAllLink={ROUTES.ANIME}
               />
             </motion.section>
           )}
@@ -449,6 +450,7 @@ export default function HomePage() {
               <SectionGrid
                 title={t('home.tvShowsCategory', 'TV Shows')}
                 movies={tvShowsCategory.items}
+                viewAllLink={ROUTES.TV_SHOW_PROGRAMS}
                 limit={12}
               />
             </motion.section>

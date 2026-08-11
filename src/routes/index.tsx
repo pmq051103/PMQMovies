@@ -6,6 +6,8 @@ import { LoadingOverlay } from '@/components/common';
 const HomePage = React.lazy(() => import('@/pages/HomePage'));
 const MoviesPage = React.lazy(() => import('@/pages/MoviesPage'));
 const TVShowsPage = React.lazy(() => import('@/pages/TVShowsPage'));
+const AnimePage = React.lazy(() => import('@/pages/AnimePage'));
+const TvShowProgramPage = React.lazy(() => import('@/pages/TvShowProgramPage'));
 const GenrePage = React.lazy(() => import('@/pages/GenrePage'));
 const CountryPage = React.lazy(() => import('@/pages/CountryPage'));
 const TopRatedPage = React.lazy(() => import('@/pages/TopRatedPage'));
@@ -27,6 +29,8 @@ export default function AppRoutes() {
           <Route path="/" element={<HomePage />} />
           <Route path="/phim-le" element={<MoviesPage />} />
           <Route path="/phim-bo" element={<TVShowsPage />} />
+          <Route path="/hoathinh" element={<AnimePage />} />
+          <Route path="/tv-shows" element={<TvShowProgramPage />} />
           {/* Genre / Country list pages removed by request — nav uses hover
               dropdowns only. Deep-linked slug pages are still supported. */}
           <Route path="/the-loai/:slug" element={<GenrePage />} />
