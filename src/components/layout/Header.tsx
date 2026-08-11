@@ -8,7 +8,17 @@ import {
   FaChevronDown,
   FaHeart,
   FaDownload,
+  FaHome,
+  FaFilm,
+  FaTv,
+  FaDragon,
+  FaBroadcastTower,
+  FaBuilding,
+  FaStar,
+  FaThLarge,
+  FaGlobeAsia,
 } from "react-icons/fa";
+import type { IconType } from "react-icons";
 import { useTranslation } from "react-i18next";
 
 import { useScrollPosition } from "@/hooks";
@@ -91,6 +101,18 @@ const Header: React.FC = () => {
     { label: t("nav.favorites"), path: ROUTES.FAVORITES },
   ];
 
+  // Icon per mobile grid tile, keyed by route path.
+  const mobileNavIcons: Record<string, IconType> = {
+    [ROUTES.HOME]: FaHome,
+    [ROUTES.MOVIES]: FaFilm,
+    [ROUTES.TV_SHOWS]: FaTv,
+    [ROUTES.ANIME]: FaDragon,
+    [ROUTES.TV_SHOW_PROGRAMS]: FaBroadcastTower,
+    [ROUTES.NOW_PLAYING]: FaBuilding,
+    [ROUTES.TOP_RATED]: FaStar,
+    [ROUTES.FAVORITES]: FaHeart,
+  };
+
   const handleSearchOpen = useCallback(() => {
     setIsSearchOpen(true);
     setIsMobileMenuOpen(false);
@@ -118,9 +140,20 @@ const Header: React.FC = () => {
       isActive ? "text-white" : "text-gray-300 hover:text-white"
     }`;
 
-  const mobileNavLinkClasses = ({ isActive }: { isActive: boolean }): string =>
-    `block px-4 py-3 text-lg font-medium transition-colors duration-200 hover:text-red-500 hover:bg-white/5 rounded-lg ${
-      isActive ? "text-red-500" : "text-gray-300"
+  // Compact 2-up grid tile used in the mobile drawer.
+  const mobileGridItemClasses = ({ isActive }: { isActive: boolean }): string =>
+    `flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-colors duration-200 ${
+      isActive
+        ? "border-red-600/40 bg-red-600/10 text-red-500"
+        : "border-transparent text-gray-300 hover:bg-white/5 hover:text-white"
+    }`;
+
+  // Full-width row used for the Thể Loại / Quốc Gia expandable sections.
+  const mobileSectionButtonClasses = (isOpen: boolean): string =>
+    `flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-[13px] font-semibold transition-colors duration-200 ${
+      isOpen
+        ? "border-red-600/40 bg-red-600/10 text-red-500"
+        : "border-transparent text-gray-300 hover:bg-white/5 hover:text-white"
     }`;
 
   const dropdownData = {
@@ -340,53 +373,77 @@ const Header: React.FC = () => {
             />
 
             <motion.aside
-              className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-gray-900 shadow-2xl lg:hidden"
+              className="fixed right-0 top-0 z-50 flex h-full w-[300px] max-w-[85vw] flex-col bg-gray-900 shadow-2xl lg:hidden"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="flex items-center justify-between border-b border-gray-800 px-4 py-4">
-                <Logo size="sm" />
+              <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3.5">
+                <div className="flex items-center gap-2 text-white">
+                  <FaBars className="h-4 w-4 text-red-500" />
+                  <span className="text-sm font-bold">{t("nav.menu")}</span>
+                </div>
                 <button
                   type="button"
                   onClick={closeMobileMenu}
-                  className="rounded-full p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-red-500"
+                  className="rounded-lg bg-white/5 p-2 text-gray-300 transition-colors hover:bg-white/10 hover:text-red-500"
                   aria-label={t("nav.close")}
                 >
-                  <FaTimes className="h-5 w-5" />
+                  <FaTimes className="h-4 w-4" />
                 </button>
               </div>
 
-              <nav className="flex-1 overflow-y-auto px-3 py-4">
-                <ul className="space-y-1">
-                  {mobileNavItems.map((item) => (
-                    <li key={item.path}>
+              <nav className="flex-1 overflow-y-auto px-3.5 py-3.5">
+                {/* 2-up icon grid — the compact tiles from the reference design */}
+                <div className="grid grid-cols-2 gap-2">
+                  {mobileNavItems.map((item) => {
+                    const Icon = mobileNavIcons[item.path] ?? FaFilm;
+                    return (
                       <NavLink
+                        key={item.path}
                         to={item.path}
                         end={item.path === ROUTES.HOME}
-                        className={mobileNavLinkClasses}
+                        className={mobileGridItemClasses}
                         onClick={closeMobileMenu}
                       >
-                        {item.label}
+                        {({ isActive }) => (
+                          <>
+                            <Icon
+                              className={`h-4 w-4 shrink-0 ${
+                                isActive ? "text-red-500" : "text-gray-400"
+                              }`}
+                            />
+                            <span className="truncate">{item.label}</span>
+                          </>
+                        )}
                       </NavLink>
-                    </li>
-                  ))}
+                    );
+                  })}
+                </div>
 
+                {/* Genres / Countries — full-width expandable rows */}
+                <div className="mt-2 space-y-2">
                   {(["genres", "countries"] as const).map((key) => {
                     const { base, label, items, query, setQuery, placeholder } =
                       dropdownData[key];
                     const isOpen = mobileSection === key;
+                    const SectionIcon = key === "genres" ? FaThLarge : FaGlobeAsia;
                     return (
-                      <li key={key}>
+                      <div key={key}>
                         <button
                           type="button"
                           onClick={() => setMobileSection(isOpen ? null : key)}
-                          className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-lg font-medium text-gray-300 transition-colors hover:bg-white/5 hover:text-red-500"
+                          className={mobileSectionButtonClasses(isOpen)}
                         >
-                          {label}
+                          <SectionIcon
+                            className={`h-4 w-4 shrink-0 ${
+                              isOpen ? "text-red-500" : "text-gray-400"
+                            }`}
+                          />
+                          <span className="flex-1 text-left">{label}</span>
                           <FaChevronDown
-                            className={`h-3 w-3 transition-transform ${
+                            className={`h-3 w-3 shrink-0 transition-transform ${
                               isOpen ? "rotate-180" : ""
                             }`}
                           />
@@ -399,7 +456,7 @@ const Header: React.FC = () => {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden"
                             >
-                              <div className="px-3 py-2 space-y-2">
+                              <div className="px-1 py-2 space-y-2">
                                 <div className="relative">
                                   <FaSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-500" />
                                   <input
@@ -429,10 +486,10 @@ const Header: React.FC = () => {
                             </motion.div>
                           )}
                         </AnimatePresence>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               </nav>
 
               <div className="border-t border-gray-800 px-4 py-4">
