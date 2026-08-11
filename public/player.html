@@ -141,8 +141,8 @@
   var art = new Artplayer({
     container: '#player',
     url: videoUrl,
-    muted: true,        // Mặc định tắt tiếng để vượt qua chính sách Autoplay của trình duyệt
-    autoplay: true,     // Tự động phát ngay lập tức
+    muted: false,       // BẬT TIẾNG MẶC ĐỊNH
+    autoplay: true,     // Cố gắng tự phát
     autoSize: false,
     autoMini: true,
     loop: false,
@@ -320,14 +320,6 @@
           },
         }
       : undefined,
-  });
-
-  /* Tự động cố gắng phát ngay cả khi trình duyệt cố tình block */
-  art.on('ready', function () {
-    art.play().catch(function() {
-      art.muted = true;
-      art.play();
-    });
   });
 
   /* Window Functions */
