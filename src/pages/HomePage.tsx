@@ -111,6 +111,7 @@ export default function HomePage() {
   const currentYear = new Date().getFullYear();
   const { data: blockbusterData } = useMoviesBySlug('phim-le', {
     page: 1, sort_field: 'view_total', sort_type: 'desc', year: currentYear,
+    country: 'au-my',
   });
   const { data: subteamData } = useMoviesBySlug('subteam', { page: 1 });
   // Phim sắp cập nhật — trailer-only titles (status: "trailer")
