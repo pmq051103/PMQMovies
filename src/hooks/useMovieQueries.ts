@@ -320,29 +320,15 @@ export function useMoviesByCountry(slug?: string, params?: PageParams) {
 }
 
 /**
- * The vsmov `/danh-sach/[slug]` endpoint IGNORES `category` / `country`
- * filters even though it accepts the params. To honour filters we must
- * dispatch to different upstream endpoints:
- *   - genre set     -> /the-loai/[genre]   (respects country + type)
- *   - country set   -> /quoc-gia/[country] (respects type)
- *   - otherwise     -> /danh-sach/[phim-le|phim-bo]
- * `kind` = 'phim-le' or 'phim-bo' decides the intrinsic movie type when
- * the caller narrows a genre/country listing.
- */
-/**
- * The vsmov `/danh-sach/[slug]` endpoint SILENTLY IGNORES the `category`,
- * `country`, and `year` query params — passing them returns unfiltered
- * data. To actually honour filters we must dispatch to the matching
- * dedicated endpoints, which DO respect the params documented below:
- *
- *   endpoint                 respects (in addition to the URL slug)
- *   -----------------------  -------------------------------------
- *   /the-loai/[genre]        country, type, year, status, sort_*
- *   /quoc-gia/[country]      type, year, status, sort_*
- *   /nam/[year]              type, status, sort_*
- *   /danh-sach/[phim-le|bo]  status, sort_* only
- *
- * Priority (most-specific first): genre > country > year > slug.
+ * phimapi's `/v1/api/danh-sach/[slug]` is the ONE endpoint that both keeps
+ * the listing's intrinsic type AND honours the `category`, `country`,
+ * `year`, `status` and `sort_*` query params. The dedicated
+ * `/v1/api/the-loai/[genre]`, `/v1/api/quoc-gia/[country]` and
+ * `/v1/api/nam/[year]` endpoints all SILENTLY IGNORE the `type` param —
+ * dispatching there used to leak every other movie type into the phim-le /
+ * phim-bo / hoạt hình / tv-shows listings the moment a filter was applied.
+ * So every kind simply lists from `/danh-sach/[slug]` and passes the
+ * filters through as query params; `kind` only picks the intrinsic type.
  */
 type ListKind = "phim-le" | "phim-bo" | "hoathinh" | "tv-shows";
 
@@ -371,37 +357,7 @@ function pickFilteredEndpoint(
   params?: FilterParams,
 ): { url: string; params: Record<string, unknown> } {
   const p = { ...(params ?? {}) };
-  const genre = p.category as string | undefined;
-  const country = p.country as string | undefined;
-  const year = p.year as string | number | undefined;
   const typeForKind = TYPE_FOR_KIND[kind];
-
-  delete (p as Record<string, unknown>).category;
-  delete (p as Record<string, unknown>).country;
-  // year is embedded in the path for /nam/[year]; keep it as a query for
-  // /the-loai and /quoc-gia which respect ?year=.
-
-  if (genre) {
-    return {
-      url: `/v1/api/the-loai/${genre}`,
-      params: { ...p, country, type: p.type ?? typeForKind },
-    };
-  }
-
-  if (country) {
-    return {
-      url: `/v1/api/quoc-gia/${country}`,
-      params: { ...p, type: p.type ?? typeForKind },
-    };
-  }
-
-  if (year) {
-    delete (p as Record<string, unknown>).year;
-    return {
-      url: `/v1/api/nam/${year}`,
-      params: { ...p, type: p.type ?? typeForKind },
-    };
-  }
 
   return {
     url: `/v1/api/danh-sach/${DANH_SACH_SLUG_FOR_KIND[kind]}`,

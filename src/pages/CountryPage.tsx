@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope, FaSearch, FaTimes } from 'react-icons/fa';
+import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope } from 'react-icons/fa';
 
 import { MovieGrid, SpotlightGrid, CategoryBanner } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
@@ -11,7 +11,6 @@ import {
   useCountries,
   useMoviesInCountry,
   useMoviesBySlug,
-  useContextualSearch,
 } from '@/hooks';
 import { ROUTES } from '@/constants';
 
@@ -122,7 +121,6 @@ function CountryDetailView({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [inlineSearch, setInlineSearch] = useState('');
   const { data: countries = [] } = useCountries();
 
   const activeType: CountryTypeTab =
@@ -149,27 +147,7 @@ function CountryDetailView({ slug }: { slug: string }) {
     return found?.name ?? slug;
   }, [countries, slug]);
 
-  // Full-catalog search restricted to this country (+ type tab if set).
-  const searchCtx = useMemo(
-    () => ({
-      countrySlug: slug,
-      type:
-        activeType === 'single'
-          ? 'single'
-          : activeType === 'series'
-            ? 'series'
-            : undefined,
-    }),
-    [slug, activeType],
-  );
-  const {
-    active: isSearching,
-    isLoading: isSearchLoading,
-    results: searchResults,
-  } = useContextualSearch(inlineSearch, searchCtx);
-
-  const displayMovies = isSearching ? searchResults : (data?.items ?? []);
-  const displayLoading = isSearching ? isSearchLoading : isLoading;
+  const displayMovies = data?.items ?? [];
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -231,39 +209,13 @@ function CountryDetailView({ slug }: { slug: string }) {
             </button>
           ))}
         </div>
-
-        {/* Inline search within the filtered country list */}
-        <div className="relative w-full sm:max-w-xs">
-          <FaSearch className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            value={inlineSearch}
-            onChange={(e) => setInlineSearch(e.target.value)}
-            placeholder={t('filter.searchInResults', 'Tìm trong danh sách...')}
-            className="w-full rounded-lg border border-gray-800 bg-gray-900 py-2 pl-9 pr-9 text-sm text-gray-100 outline-none placeholder:text-gray-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          />
-          {inlineSearch && (
-            <button
-              type="button"
-              onClick={() => setInlineSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-500 hover:text-white"
-              aria-label={t('search.clear')}
-            >
-              <FaTimes className="h-3 w-3" />
-            </button>
-          )}
-        </div>
       </div>
 
-      {displayLoading ? (
+      {isLoading ? (
         <GridSkeleton />
-      ) : displayMovies.length === 0 && isSearching ? (
-        <p className="py-16 text-center text-gray-500">
-          {t('search.noResults')}
-        </p>
       ) : (
         <>
-          {!isSearching && page === 1 && displayMovies.length >= 5 && (
+          {page === 1 && displayMovies.length >= 5 && (
             <div className="mb-8">
               <SpotlightGrid
                 title={countryName}
@@ -273,7 +225,7 @@ function CountryDetailView({ slug }: { slug: string }) {
           )}
           <MovieGrid
             movies={
-              !isSearching && page === 1 && displayMovies.length >= 5
+              page === 1 && displayMovies.length >= 5
                 ? displayMovies.slice(5, 23)
                 : displayMovies
             }
@@ -281,7 +233,7 @@ function CountryDetailView({ slug }: { slug: string }) {
         </>
       )}
 
-      {!isSearching && data?.pagination && data.pagination.totalPages > 1 && (
+      {data?.pagination && data.pagination.totalPages > 1 && (
         <Pagination
           currentPage={data.pagination.currentPage}
           totalPages={data.pagination.totalPages}
