@@ -1,10 +1,10 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { FaChevronRight, FaStar } from "react-icons/fa";
-import { useTranslation } from "react-i18next";
+import { FaStar } from "react-icons/fa";
 
 import { ROUTES } from "@/constants";
 import { getMoviePoster, onImgError } from "@/utils";
+import { SectionTitle } from "@/components/common";
 import type { MovieListItem } from "@/types";
 
 interface TopRankingRowProps {
@@ -29,24 +29,12 @@ const TopRankingRow: React.FC<TopRankingRowProps> = ({
   limit = 10,
   showRating = false,
 }) => {
-  const { t } = useTranslation();
   const items = movies.slice(0, limit);
   if (items.length === 0) return null;
 
   return (
     <section className="w-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white sm:text-2xl">{title}</h2>
-        {viewAllLink && (
-          <Link
-            to={viewAllLink}
-            className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
-          >
-            {t("common.seeAll")}
-            <FaChevronRight className="h-2.5 w-2.5" />
-          </Link>
-        )}
-      </div>
+      <SectionTitle title={title} viewAllLink={viewAllLink} />
 
       <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
         {items.map((m, idx) => (

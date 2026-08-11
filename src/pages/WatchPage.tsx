@@ -518,19 +518,23 @@ export default function WatchPage() {
                     </div>
                   )}
 
-                  {/* Logo watermark — top-right corner of video */}
+                  {/* Logo watermark — top-left corner of video, styled as a
+                      rounded pill badge (icon + site name), matching the
+                      khophim.org-style branding reference. */}
                   <Link
                     to={ROUTES.HOME}
-                    className="pointer-events-auto absolute right-3 top-3 z-10 opacity-40 transition-opacity hover:opacity-80"
+                    className="pointer-events-auto absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/55 px-2 py-1 backdrop-blur-sm transition-colors hover:bg-black/70"
                     title="Không Gian Phim"
                   >
                     <img
                       src="/logo.png"
                       alt="Không Gian Phim"
-                      className="h-8 w-auto drop-shadow-lg sm:h-10"
+                      className="h-5 w-5 rounded-full object-cover sm:h-6 sm:w-6"
                       draggable={false}
-                      style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.8))' }}
                     />
+                    <span className="text-xs font-semibold text-white drop-shadow-sm sm:text-sm">
+                      Không Gian Phim
+                    </span>
                   </Link>
                 </div>
               </div>

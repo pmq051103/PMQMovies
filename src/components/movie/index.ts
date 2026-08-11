@@ -7,3 +7,5 @@ export { default as EpisodeList } from './EpisodeList';
 export { default as SpotlightGrid } from './SpotlightGrid';
 export { default as TopRankingRow } from './TopRankingRow';
 export { default as PromoBanner } from './PromoBanner';
+export { default as CategoryBanner } from './CategoryBanner';
+export { default as StatsBlock } from './StatsBlock';

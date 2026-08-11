@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
 import { getMoviePoster, truncateText, onImgError } from "@/utils";
+import { SectionTitle } from "@/components/common";
 import type { MovieListItem } from "@/types";
 
 interface MovieCarouselProps {
@@ -77,11 +78,7 @@ const MovieCarousel: React.FC<MovieCarouselProps> = ({ movies, title }) => {
       className="relative py-4"
     >
       {/* Optional title */}
-      {title && (
-        <h2 className="mb-4 px-4 text-xl font-bold text-white md:px-0">
-          {title}
-        </h2>
-      )}
+      {title && <SectionTitle title={title} className="px-4 md:px-0" />}
 
       <div className="group/carousel relative">
         {/* Left arrow */}

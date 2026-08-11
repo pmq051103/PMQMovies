@@ -1,9 +1,9 @@
 import { useRef, useState, useCallback, useEffect, memo } from 'react';
-import { Link } from 'react-router';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import MovieCard from '@/components/movie/MovieCard';
+import { SectionTitle } from '@/components/common';
 import type { MovieListItem } from '@/types';
 
 interface MovieRowProps {
@@ -54,18 +54,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ title, movies, viewAllLink }) => {
   return (
     <section className="relative py-4">
       {/* Section header */}
-      <div className="mb-3 flex items-center justify-between px-4 md:px-0">
-        <h2 className="text-xl font-bold text-white">{title}</h2>
-        {viewAllLink && (
-          <Link
-            to={viewAllLink}
-            className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-400"
-          >
-            <span>{t('common.seeAll')}</span>
-            <FaChevronRight className="h-3 w-3" />
-          </Link>
-        )}
-      </div>
+      <SectionTitle title={title} viewAllLink={viewAllLink} className="px-4 md:px-0" />
 
       {/* Carousel wrapper */}
       <div className="group/row relative">

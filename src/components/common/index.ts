@@ -4,3 +4,4 @@ export { default as GridSkeleton } from './GridSkeleton';
 export { default as DetailSkeleton } from './DetailSkeleton';
 export { default as ShareButtons } from './ShareButtons';
 export { default as Pagination } from './Pagination';
+export { default as SectionTitle } from './SectionTitle';

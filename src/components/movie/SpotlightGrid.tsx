@@ -1,11 +1,12 @@
 import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaStar, FaPlay, FaChevronRight } from "react-icons/fa";
+import { FaStar, FaPlay } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "@/constants";
 import { getMoviePoster } from "@/utils";
+import { SectionTitle } from "@/components/common";
 import type { MovieListItem } from "@/types";
 
 interface SpotlightGridProps {
@@ -45,18 +46,7 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
 
   return (
     <section className="w-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white sm:text-2xl">{title}</h2>
-        {viewAllLink && (
-          <Link
-            to={viewAllLink}
-            className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
-          >
-            {t("common.seeAll")}
-            <FaChevronRight className="h-2.5 w-2.5" />
-          </Link>
-        )}
-      </div>
+      <SectionTitle title={title} viewAllLink={viewAllLink} />
 
       <div className="always-dark grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Hero card — landscape, large */}

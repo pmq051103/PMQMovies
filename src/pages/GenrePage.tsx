@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { FaFilm, FaTheaterMasks, FaSearch, FaTimes } from 'react-icons/fa';
 
-import { MovieGrid, SpotlightGrid } from '@/components/movie';
+import { MovieGrid, SpotlightGrid, CategoryBanner } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
 import {
   useGenres,
@@ -204,12 +204,14 @@ function GenreDetailView({ slug }: { slug: string }) {
         <link rel="canonical" href={`https://khonggianphim.online/the-loai/${slug}`} />
       </Helmet>
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold sm:text-3xl">{genreName}</h1>
-        <span className="text-sm text-gray-400">
-          {data?.pagination?.totalItems ?? 0} {t('common.results', 'kết quả')}
-        </span>
-      </div>
+      <CategoryBanner
+        eyebrow={t('nav.genres')}
+        title={genreName}
+        description={`Tuyển tập phim ${genreName} đặc sắc nhất — chọn lọc kỹ càng, Vietsub, thuyết minh, lồng tiếng, cập nhật liên tục để bạn xem online miễn phí chất lượng cao.`}
+        totalItems={data?.pagination?.totalItems}
+        backdropUrl={displayMovies[0]?.thumb_url ?? displayMovies[0]?.poster_url}
+        icon={FaTheaterMasks}
+      />
 
       {/* Type tabs + inline search on the same row (stacks on mobile).
           Type tabs hidden for synthetic slugs (Hoạt Hình / TV Shows) where

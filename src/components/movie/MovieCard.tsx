@@ -60,7 +60,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <motion.div
-        className="relative flex flex-col overflow-hidden rounded-lg bg-gray-900 shadow-lg"
+        className="relative flex flex-col overflow-hidden rounded-md bg-gray-900 shadow-lg sm:rounded-lg"
         whileHover={{ scale: 1.05 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
       >
@@ -77,20 +77,20 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
 
           {/* Hover overlay with centered play button */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg shadow-red-600/40">
-              <FaPlay className="h-4 w-4 translate-x-0.5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-lg shadow-red-600/40 sm:h-12 sm:w-12">
+              <FaPlay className="h-3 w-3 translate-x-0.5 sm:h-4 sm:w-4" />
             </div>
           </div>
 
           {/* Top-left badges: year + rating */}
-          <div className="absolute left-1.5 top-1.5 flex flex-col gap-1">
+          <div className="absolute left-1 top-1 flex flex-col gap-0.5 sm:left-1.5 sm:top-1.5 sm:gap-1">
             {movie.quality && (
-              <span className="w-fit rounded bg-red-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <span className="w-fit rounded bg-red-600/90 px-1 py-0.5 text-[8px] font-bold text-white backdrop-blur-sm sm:px-1.5 sm:text-[10px]">
                 {movie.quality}
               </span>
             )}
             {movie.lang && (
-              <span className="w-fit rounded bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+              <span className="w-fit rounded bg-blue-600/90 px-1 py-0.5 text-[8px] font-semibold text-white backdrop-blur-sm sm:px-1.5 sm:text-[10px]">
                 {movie.lang}
               </span>
             )}
@@ -98,21 +98,21 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
 
           {/* Top-right badge: rating */}
           {rating !== null && rating > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded bg-yellow-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-              <FaStar className="h-2 w-2" />
+            <span className="absolute right-1 top-1 flex items-center gap-0.5 rounded bg-yellow-600/90 px-1 py-0.5 text-[8px] font-bold text-white backdrop-blur-sm sm:right-1.5 sm:top-1.5 sm:px-1.5 sm:text-[10px]">
+              <FaStar className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
               {rating.toFixed(1)}
             </span>
           )}
 
           {/* Bottom-left badge: episode count */}
-          <div className="absolute bottom-1.5 left-1.5 flex gap-1">
+          <div className="absolute bottom-1 left-1 flex gap-1 sm:bottom-1.5 sm:left-1.5">
             {episodeBadge && (
-              <span className="rounded bg-green-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <span className="rounded bg-green-600/90 px-1 py-0.5 text-[8px] font-bold text-white backdrop-blur-sm sm:px-1.5 sm:text-[10px]">
                 {episodeBadge}
               </span>
             )}
             {movie.year > 0 && (
-              <span className="rounded bg-gray-900/80 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+              <span className="rounded bg-gray-900/80 px-1 py-0.5 text-[8px] font-semibold text-white backdrop-blur-sm sm:px-1.5 sm:text-[10px]">
                 {movie.year}
               </span>
             )}
@@ -120,8 +120,8 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
         </div>
 
         {/* Title below image — truncated single line */}
-        <div className="p-2">
-          <h3 className="truncate text-sm font-medium text-gray-200 transition-colors group-hover:text-red-400">
+        <div className="p-1.5 sm:p-2">
+          <h3 className="truncate text-xs font-medium text-gray-200 transition-colors group-hover:text-red-400 sm:text-sm">
             {movie.name}
           </h3>
         </div>

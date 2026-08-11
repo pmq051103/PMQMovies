@@ -1,11 +1,10 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { FaStar, FaFire, FaFilm } from 'react-icons/fa';
+import { FaStar, FaFire } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getMoviePoster, onImgError, formatNumber } from '@/utils';
-import { useCatalogStats } from '@/hooks';
+import { getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
 
 interface SidebarProps {
@@ -15,36 +14,17 @@ interface SidebarProps {
 }
 
 /**
- * Right sidebar for homepage — shows a total-catalog-size card, then
- * "Đánh giá cao" / "Hot Trong Tuần" / "Thịnh Hành" ranked lists with
- * small poster thumbnails, like motchille.tv.
+ * Right sidebar for homepage — "Đánh giá cao" / "Hot Trong Tuần" /
+ * "Thịnh Hành" ranked lists with small poster thumbnails, like
+ * motchille.tv. (The old "Tổng số phim hiện tại" card was removed —
+ * that number now lives in the "Đầu phim duy nhất" stat on the
+ * StatsBlock up top, so it wasn't needed twice.)
  */
 const Sidebar: React.FC<SidebarProps> = ({ topRated = [], trending = [], hotWeekly = [] }) => {
   const { t } = useTranslation();
-  const { data: catalogStats, isLoading: statsLoading } = useCatalogStats();
 
   return (
     <aside className="space-y-8">
-      {/* Tổng số phim hiện tại */}
-      <div className="rounded-xl border border-gray-800 bg-gradient-to-br from-red-950/40 to-gray-900/50 p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-white">
-          <FaFilm className="h-3.5 w-3.5 text-red-500" />
-          {t('home.totalMovies', 'Tổng số phim hiện tại')}
-        </h3>
-        {statsLoading ? (
-          <div className="h-9 w-24 animate-pulse rounded bg-gray-800" />
-        ) : (
-          <>
-            <p className="text-3xl font-extrabold text-white">
-              {formatNumber(catalogStats?.totalEstimated ?? 0)}
-            </p>
-            <p className="mt-1 text-[11px] text-gray-500">
-              {t('home.totalMoviesNote', 'Dữ liệu được tổng hợp từ nhiều nguồn.')}
-            </p>
-          </>
-        )}
-      </div>
-
       {/* Top Rated */}
       {topRated.length > 0 && (
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">

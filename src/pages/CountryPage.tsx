@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { FaGlobeAmericas, FaGlobeAsia, FaGlobeEurope, FaSearch, FaTimes } from 'react-icons/fa';
 
-import { MovieGrid, SpotlightGrid } from '@/components/movie';
+import { MovieGrid, SpotlightGrid, CategoryBanner } from '@/components/movie';
 import { Pagination, GridSkeleton } from '@/components/common';
 import {
   useCountries,
@@ -197,12 +197,14 @@ function CountryDetailView({ slug }: { slug: string }) {
         <link rel="canonical" href={`https://khonggianphim.online/quoc-gia/${slug}`} />
       </Helmet>
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold sm:text-3xl">{countryName}</h1>
-        <span className="text-sm text-gray-400">
-          {data?.pagination?.totalItems ?? 0} {t('common.results', 'kết quả')}
-        </span>
-      </div>
+      <CategoryBanner
+        eyebrow={t('nav.countries')}
+        title={countryName}
+        description={`Phim ${countryName} chọn lọc, đa dạng thể loại — Vietsub, thuyết minh, lồng tiếng, cập nhật mới mỗi ngày để bạn khám phá điện ảnh ${countryName} dễ dàng hơn.`}
+        totalItems={data?.pagination?.totalItems}
+        backdropUrl={displayMovies[0]?.thumb_url ?? displayMovies[0]?.poster_url}
+        icon={FaGlobeAsia}
+      />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">

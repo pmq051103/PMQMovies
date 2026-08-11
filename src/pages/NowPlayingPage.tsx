@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaFilter, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaSearch, FaFire } from 'react-icons/fa';
 
-import { MovieGrid, FilterSidebar, SpotlightGrid } from '@/components/movie';
+import { MovieGrid, FilterSidebar, SpotlightGrid, CategoryBanner } from '@/components/movie';
 import { Pagination } from '@/components/common';
 import { useMoviesBySlug, useContextualSearch } from '@/hooks';
 import type { FilterState, FilterParams } from '@/types';
@@ -122,9 +122,17 @@ export default function NowPlayingPage() {
         animate="visible"
       >
         <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-          {/* Header + inline search */}
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-2xl font-bold sm:text-3xl">{t('nav.nowPlaying')}</h1>
+          <CategoryBanner
+            eyebrow="Danh mục"
+            title={t('nav.nowPlaying')}
+            description="Những bom tấn đang và sắp ra rạp — cập nhật sớm, chất lượng cao, Vietsub chuẩn rạp, xem online miễn phí ngay khi có bản đẹp."
+            totalItems={data?.pagination?.totalItems}
+            backdropUrl={displayMovies[0]?.thumb_url ?? displayMovies[0]?.poster_url}
+            icon={FaFire}
+          />
+
+          {/* Inline search */}
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex gap-2 sm:items-center">
               <div className="relative flex-1 sm:w-64">
                 <FaSearch className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />

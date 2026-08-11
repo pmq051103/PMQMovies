@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FaPlay, FaChevronRight } from 'react-icons/fa';
+import { FaPlay } from 'react-icons/fa';
 
 import {
   HeroBanner,
@@ -12,9 +12,11 @@ import {
   TopRankingRow,
 } from '@/components/movie';
 import PromoBanner from '@/components/movie/PromoBanner';
+import StatsBlock from '@/components/movie/StatsBlock';
 import Sidebar from '@/components/movie/Sidebar';
+import { SectionTitle } from '@/components/common';
 import { useHistoryStore } from '@/store';
-import { useLatestMovies, useMoviesBySlug } from '@/hooks';
+import { useLatestMovies, useMoviesBySlug, useCatalogStats } from '@/hooks';
 import { ROUTES } from '@/constants';
 import { getMoviePoster, onImgError } from '@/utils';
 import type { MovieListItem } from '@/types';
@@ -50,25 +52,13 @@ interface SectionGridProps {
 }
 
 function SectionGrid({ title, movies, viewAllLink, limit = 12 }: SectionGridProps) {
-  const { t } = useTranslation();
   const items = movies.slice(0, limit);
   if (items.length === 0) return null;
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white sm:text-2xl">{title}</h2>
-        {viewAllLink && (
-          <Link
-            to={viewAllLink}
-            className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
-          >
-            {t('common.seeAll')}
-            <FaChevronRight className="h-2.5 w-2.5" />
-          </Link>
-        )}
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <SectionTitle title={title} viewAllLink={viewAllLink} />
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {items.map((movie) => (
           <MovieCard key={movie._id ?? movie.slug} movie={movie} />
         ))}
@@ -89,6 +79,7 @@ export default function HomePage() {
   const { data: latestData } = useLatestMovies(1);
   const { data: latestPage2 } = useLatestMovies(2);
   const { data: latestPage3 } = useLatestMovies(3);
+  const { data: catalogStats } = useCatalogStats();
   const { data: singleMovies } = useMoviesBySlug('phim-le', { page: 1 });
   const { data: tvShows } = useMoviesBySlug('phim-bo', { page: 1 });
   const { data: anime } = useMoviesBySlug('hoat-hinh', { page: 1 });
@@ -201,6 +192,12 @@ export default function HomePage() {
       <div className="min-h-screen bg-gray-950 text-white">
         {heroBannerMovies.length > 0 && <HeroBanner movies={heroBannerMovies} />}
 
+        <StatsBlock
+          totalMovies={catalogStats?.totalEstimated}
+          publishedCount={catalogStats?.ophim}
+          sourceCount={catalogStats?.phimapi}
+        />
+
         <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex gap-8">
         {/* Main content */}
@@ -213,18 +210,10 @@ export default function HomePage() {
           {/* ── Continue Watching (horizontal scroll OK for this one) ── */}
           {continueWatchingItems.length > 0 && (
             <motion.section variants={itemVariants}>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white sm:text-2xl">
-                  {t('home.continueWatching')}
-                </h2>
-                <Link
-                  to={ROUTES.HISTORY}
-                  className="flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-red-500"
-                >
-                  {t('common.seeAll')}
-                  <FaChevronRight className="h-2.5 w-2.5" />
-                </Link>
-              </div>
+              <SectionTitle
+                title={t('home.continueWatching')}
+                viewAllLink={ROUTES.HISTORY}
+              />
               <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
                 {continueWatchingItems.map((item) => (
                   <Link
