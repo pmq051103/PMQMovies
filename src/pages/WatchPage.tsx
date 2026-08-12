@@ -321,10 +321,33 @@ export default function WatchPage() {
       if (e.data.action === 'navigateHome') {
         navigate(ROUTES.HOME);
       }
+      // iOS Safari can't DOM-fullscreen a container that wraps a <video>
+      // (it hands the video to the native player, hiding all DOM overlays
+      // including the logo watermark). player.html therefore skips native
+      // fullscreen on iOS and asks us to "fake" it instead — our cinema
+      // mode is exactly a fixed full-viewport overlay, so route the
+      // player's fullscreen button to it. This keeps the logo visible on
+      // iOS exactly like Android / desktop.
+      if (e.data.action === 'toggleFullscreen') {
+        setCinemaMode(!cinemaMode);
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [navigate]);
+  }, [navigate, cinemaMode, setCinemaMode]);
+
+  // Keep the in-iframe player's fullscreen button icon in sync with
+  // cinema mode. On iOS that button toggles cinema mode instead of native
+  // fullscreen, so whenever cinema mode changes (from the player button,
+  // our own "Rạp phim" toggle, Esc, the exit pill or the backdrop) we
+  // tell player.html to flip its button state.
+  useEffect(() => {
+    if (!embedUrl.startsWith('/player.html')) return;
+    iframeRef.current?.contentWindow?.postMessage(
+      { action: 'fullscreenState', state: cinemaMode },
+      '*',
+    );
+  }, [embedUrl, cinemaMode]);
 
   // Reset progress when episode changes so stale values don't carry over
   useEffect(() => {
