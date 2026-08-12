@@ -415,6 +415,69 @@
   });
 
   // ===================================================================
+  // iOS FULLSCREEN FIX
+  //
+  // iOS Safari only has PARTIAL Fullscreen API support: it only honours
+  // fullscreen requests on <video> elements. When Artplayer fullscreens
+  // its player container (a <div> wrapping the <video>), iOS ignores the
+  // div and hands the video to the NATIVE fullscreen player instead,
+  // which renders no DOM at all — so the logo layer (and our center
+  // controls / unmute pill) vanish on iOS, while Android and desktop
+  // DOM-fullscreen the container and keep the layers visible.
+  //
+  // Fix: on iOS we never enter native fullscreen. The fullscreen button
+  // (and double-tap) is redirected to ask the PARENT page to
+  // "fake-fullscreen" the whole player via a fixed full-viewport overlay
+  // (the parent already does exactly this for its cinema mode). Inside
+  // that overlay the iframe scales up to fill the screen, so the
+  // in-player logo layer stays visible — matching Android / desktop.
+  // ===================================================================
+  var isIOS =
+    /(iPad|iPhone|iPod)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  var kgpFakeFullscreen = false;
+
+  function kgpSetFakeFullscreen(state) {
+    var next = !!state;
+    if (kgpFakeFullscreen === next) return;
+    kgpFakeFullscreen = next;
+    // Built-in fullscreen control flips its icon/tooltip on this event,
+    // and autoOrientation safely no-ops on iOS (no orientation lock API).
+    art.emit('fullscreen', kgpFakeFullscreen);
+  }
+
+  function kgpToggleFakeFullscreen() {
+    kgpSetFakeFullscreen(!kgpFakeFullscreen);
+    postToParent({ action: 'toggleFullscreen' });
+  }
+
+  if (isIOS) {
+    // Artplayer fullscreens `$player` via Element.requestFullscreen
+    // (standard path) or the <video>'s webkitEnterFullscreen (old-Safari
+    // fallback path). Patch BOTH entry points so every native-fullscreen
+    // attempt is redirected to our fake fullscreen flow instead. A
+    // resolved promise is returned so Artplayer's internal promise
+    // machinery (Mt.request) never hangs waiting for a fullscreenchange
+    // that will never fire.
+    var kgpRedirectFullscreen = function () {
+      kgpToggleFakeFullscreen();
+      return Promise.resolve();
+    };
+
+    var $playerRoot = art.template.$player;
+    if ($playerRoot) {
+      $playerRoot.requestFullscreen = kgpRedirectFullscreen;
+      $playerRoot.webkitRequestFullscreen = kgpRedirectFullscreen;
+    }
+
+    var $videoEl = art.template.$video;
+    if ($videoEl && $videoEl.webkitEnterFullscreen) {
+      $videoEl.webkitEnterFullscreen = kgpRedirectFullscreen;
+    }
+  }
+
+  // ===================================================================
   // Center overlay controls (mobile only — see CSS at the top for why).
   // Defined as plain window functions so the inline onclick= handlers in
   // the layer's HTML string can reach them regardless of Artplayer's
@@ -522,6 +585,12 @@
     }
     if (e.data.action === 'play') {
       art.play();
+    }
+    // Parent confirms fake-fullscreen state (it may exit via Esc, the
+    // exit pill, the backdrop, or its own cinema-mode toggle) — keep the
+    // fullscreen button icon in sync.
+    if (e.data.action === 'fullscreenState' && typeof e.data.state === 'boolean') {
+      kgpSetFakeFullscreen(e.data.state);
     }
   });
 
