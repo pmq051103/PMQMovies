@@ -63,61 +63,6 @@
     }
   }
 
-  /* ── Rotate button (mobile only) ─────────────────────────────────
-     Manual "go big, but you choose the orientation" control — tapping
-     it enters fullscreen AND visually rotates the player 90° via CSS
-     transform so a landscape-shaped video fills a portrait phone
-     screen edge-to-edge, without ever calling the Screen Orientation
-     Lock API. The phone itself never gets forced into landscape, so
-     portrait stays fully usable — tap again (or exit fullscreen any
-     other way) and it snaps back to normal. */
-  #kgp-rotate-btn {
-    display: none;
-  }
-  @media (max-width: 480px) {
-    #kgp-rotate-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border: none;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(4px);
-      color: #fff;
-      cursor: pointer;
-      padding: 0;
-    }
-    /* Explicit, !important fill here because Artplayer's own
-       stylesheet applies a broad `svg { fill: currentColor }`-style
-       rule to everything inside `.art-video-player`. CSS stylesheet
-       rules always beat presentation attributes like fill="none" on
-       the <svg> tag itself (an attribute-level fill has the lowest
-       possible priority in the cascade), so the previous outline-style
-       icon (fill="none" stroke="currentColor") got its stroke path
-       force-filled solid — the "white lump". Switched to a filled
-       icon design below (no stroke at all) so there's nothing left
-       for that rule to clash with, and this stays as a guard. */
-    #kgp-rotate-btn svg {
-      fill: currentColor !important;
-      stroke: none !important;
-    }
-  }
-  /* Applied to the actual fullscreen element (.art-video-player)
-     itself — NOT an ancestor — because elements taken over by the
-     native Fullscreen API render in the browser's top layer, so CSS
-     transforms on an ancestor div would have no visible effect. */
-  .art-video-player.kgp-rotated {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 100vh !important;
-    height: 100vw !important;
-    transform: translate(-50%, -50%) rotate(90deg) !important;
-    transform-origin: center center !important;
-  }
-
   /* ── Center overlay controls (play/pause + ±10s) ─────────────────
      Mobile-only, YouTube-style: big, thumb-friendly buttons sitting
      directly on the video instead of squeezed into the bottom icon
@@ -244,22 +189,6 @@
         },
         click: function () {
           postToParent({ action: 'navigateHome' });
-        },
-      },
-      {
-        // Mobile-only: manual rotate/"go big" button, top-right corner.
-        // See the #kgp-rotate-btn CSS above for how it works.
-        name: 'kgp-rotate',
-        html:
-          '<button type="button" id="kgp-rotate-btn" aria-label="Xoay màn hình" onclick="window.__kgpToggleRotate(event)">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zm-7.93 7.93v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.92h-2.02c-.14.87-.48 1.72-1.02 2.51z"/></svg>' +
-          '</button>',
-        style: {
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          zIndex: 30,
-          pointerEvents: 'auto',
         },
       },
       {
@@ -419,30 +348,6 @@
       art.play();
     }
   };
-
-  // Manual rotate: enters fullscreen + rotates the player 90° via CSS
-  // (see .art-video-player.kgp-rotated above) — never touches the
-  // Screen Orientation Lock API, so the phone stays free to be held
-  // however the person wants; tapping again undoes both.
-  window.__kgpToggleRotate = function (e) {
-    if (e) e.stopPropagation();
-    var $player = art.template.$player;
-    var isRotated = $player.classList.contains('kgp-rotated');
-    if (isRotated) {
-      $player.classList.remove('kgp-rotated');
-      if (art.fullscreen) art.fullscreen = false;
-    } else {
-      $player.classList.add('kgp-rotated');
-      if (!art.fullscreen) art.fullscreen = true;
-    }
-  };
-
-  // If fullscreen is exited some other way (Esc key, system back
-  // gesture, browser UI), drop the rotated layout too so it doesn't
-  // get stuck rotated outside of fullscreen.
-  art.on('fullscreen', function (isFullscreen) {
-    if (!isFullscreen) art.template.$player.classList.remove('kgp-rotated');
-  });
 
   var KGP_PLAY_ICON = '<path fill="currentColor" d="M8 5v14l11-7z"/>';
   var KGP_PAUSE_ICON = '<path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
