@@ -35,7 +35,7 @@ const socialLinks = [
   },
   {
     icon: FaTiktok,
-    href: "https://www.tiktok.com/",
+    href: "https://www.tiktok.com/@khonggianphim.online",
     label: "TikTok",
     hoverBg: "hover:bg-black",
   },
