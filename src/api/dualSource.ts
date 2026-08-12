@@ -198,13 +198,13 @@ export interface CatalogStats {
   vsmov: number;
   ophim: number;
   /**
-   * Sum of ophim1 + vsmov's reported totals only. This is an UPPER-BOUND
-   * estimate, not the true deduped count — the two sources mirror some of
+   * Sum of phimapi + vsmov's reported totals only. This is an UPPER-BOUND
+   * estimate, not the true deduped count — the sources mirror some of
    * the same underlying catalog, and figuring out the real unique total
    * would mean crawling & deduping every page of both APIs client-side,
-   * which isn't practical. phimapi is intentionally excluded from this
-   * figure (it's shown separately as "Phim có nguồn phát"). Framed as
-   * "phim trong kho (ước tính)" in the UI rather than an exact figure.
+   * which isn't practical. ophim1 is intentionally excluded from this
+   * figure. Framed as "phim trong kho (ước tính)" in the UI rather than
+   * an exact figure.
    */
   totalEstimated: number;
 }
@@ -235,8 +235,8 @@ export async function getCatalogStats(): Promise<CatalogStats> {
   const vsmov = secondary?.pagination?.totalItems ?? 0;
   const ophim = tertiary?.pagination?.totalItems ?? 0;
 
-  // "Đầu phim duy nhất" only counts ophim1 + vsmov (phimapi excluded per request).
-  return { phimapi, vsmov, ophim, totalEstimated: vsmov + ophim };
+  // "Đầu phim duy nhất" only counts phimapi + vsmov (ophim excluded per request).
+  return { phimapi, vsmov, ophim, totalEstimated: phimapi + vsmov };
 }
 
 /* ------------------------------------------------------------------ */

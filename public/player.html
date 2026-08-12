@@ -2,120 +2,166 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Không Gian Phim Player</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
   #player { width: 100%; height: 100%; }
 
-  /* ── Xóa thời gian hiển thị ở góc trên bên trái ─────── */
-  .art-top [data-name="time"],
-  .art-top .art-control-time,
-  .art-layer-top .art-time,
-  .art-top-left,
-  .art-layer-top-left {
-    display: none !important;
-  }
+  /* ── Mobile control-bar fix ──────────────────────────────────────
+     Verified against Artplayer 5.4.0's actual source (not guessed):
+     controls never get a `data-name` attribute — that selector never
+     matched anything. And `lock` isn't a bottom-bar control at all;
+     it's a separate `.art-layer-lock` overlay, only auto-added when
+     Artplayer's own UA sniffing thinks it's mobile — so it's disabled
+     properly below via `lock: false` in the player config instead of
+     (ineffectively) hiding it here. `aspectRatio` was never in the
+     bottom bar either (it only lives in the settings/⚙ panel).
 
-  /* ── Fix layout Mobile ────────────────────────────────────────── */
-  @media (max-width: 768px) {
-    .art-bottom {
-      width: 100% !important;
-      max-width: 100vw !important;
-      overflow: hidden !important;
+     What's ACTUALLY in the bottom bar on mobile (real classes, e.g.
+     `.art-control-playAndPause`): rewind, play/pause, forward, volume,
+     time text, setting, pip, fullscreen — too wide for a phone screen,
+     pushing fullscreen off to the right.
+
+     Fix: play/pause + rewind/forward now live in a big overlay on top
+     of the video itself (#kgp-center-controls below), so their bottom-bar
+     copies are hidden on mobile — freeing most of the row's width so
+     fullscreen fits without scrolling. */
+  @media (max-width: 480px) {
+    .art-bottom .art-control-fast-rewind,
+    .art-bottom .art-control-fast-forward,
+    .art-bottom .art-control-playAndPause {
+      display: none !important;
+    }
+    .art-controls,
+    .art-controls-left,
+    .art-controls-right {
+      gap: 2px !important;
+    }
+    .art-control {
       padding: 0 4px !important;
     }
+    .art-icon svg {
+      width: 20px !important;
+      height: 20px !important;
+    }
     .art-controls {
-      width: 100% !important;
-      justify-content: space-between !important;
-      align-items: center !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
     }
-    .art-controls-left {
-      flex: 1 1 auto !important;
-      min-width: 0 !important;
-      overflow: hidden !important;
-      gap: 2px !important;
-    }
-    .art-controls-right {
-      flex: 0 0 auto !important;
-      gap: 2px !important;
-      margin-left: auto !important;
-    }
-
-    /* Chỉ ẩn nút lock & bộ nút tua trùng lặp ở thanh bottom */
-    .art-bottom [data-name="lock"],
-    .art-bottom [data-name="fast-rewind"],
-    .art-bottom [data-name="fast-forward"],
-    .art-bottom .art-control-playAndPause,
-    .art-bottom .art-control-play {
+    .art-controls::-webkit-scrollbar {
       display: none !important;
     }
 
-    .art-control {
-      padding: 0 2px !important;
-    }
-    .art-icon svg {
-      width: 18px !important;
-      height: 18px !important;
+    /* Artplayer's own big center play/pause "state" icon
+       (`.art-mask .art-state`) would otherwise sit right behind our
+       custom overlay buttons and double up visually — it's replaced
+       by #kgp-center-controls, so hide it on mobile only. */
+    .art-mask .art-state {
+      display: none !important;
     }
   }
 
-  /* ── Bộ 3 nút giữa màn hình (Center Overlay) ────────────────── */
+  /* ── Rotate button (mobile only) ─────────────────────────────────
+     Manual "go big, but you choose the orientation" control — tapping
+     it enters fullscreen AND visually rotates the player 90° via CSS
+     transform so a landscape-shaped video fills a portrait phone
+     screen edge-to-edge, without ever calling the Screen Orientation
+     Lock API. The phone itself never gets forced into landscape, so
+     portrait stays fully usable — tap again (or exit fullscreen any
+     other way) and it snaps back to normal. */
+  #kgp-rotate-btn {
+    display: none;
+  }
+  @media (max-width: 480px) {
+    #kgp-rotate-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      cursor: pointer;
+      padding: 0;
+    }
+    /* Explicit, !important fill here because Artplayer's own
+       stylesheet applies a broad `svg { fill: currentColor }`-style
+       rule to everything inside `.art-video-player`. CSS stylesheet
+       rules always beat presentation attributes like fill="none" on
+       the <svg> tag itself (an attribute-level fill has the lowest
+       possible priority in the cascade), so the previous outline-style
+       icon (fill="none" stroke="currentColor") got its stroke path
+       force-filled solid — the "white lump". Switched to a filled
+       icon design below (no stroke at all) so there's nothing left
+       for that rule to clash with, and this stays as a guard. */
+    #kgp-rotate-btn svg {
+      fill: currentColor !important;
+      stroke: none !important;
+    }
+  }
+  /* Applied to the actual fullscreen element (.art-video-player)
+     itself — NOT an ancestor — because elements taken over by the
+     native Fullscreen API render in the browser's top layer, so CSS
+     transforms on an ancestor div would have no visible effect. */
+  .art-video-player.kgp-rotated {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 100vh !important;
+    height: 100vw !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center center !important;
+  }
+
+  /* ── Center overlay controls (play/pause + ±10s) ─────────────────
+     Mobile-only, YouTube-style: big, thumb-friendly buttons sitting
+     directly on the video instead of squeezed into the bottom icon
+     row. Desktop keeps the bottom-bar buttons (plenty of room there),
+     so this overlay is hidden by default and only shown under the
+     max-width:480px query. */
   #kgp-center-controls {
     display: none;
   }
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     #kgp-center-controls {
-      display: flex !important;
+      display: flex;
       align-items: center;
       justify-content: center;
       gap: 36px;
       width: 100%;
-      height: 100%;
       pointer-events: none;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
-      opacity: 1;
-      visibility: visible;
     }
-
-    /* Đồng bộ ẨN bộ nút giữa màn hình khi thanh controls ẩn */
-    .art-hide #kgp-center-controls,
-    .art-controls-hide #kgp-center-controls {
-      opacity: 0 !important;
-      visibility: hidden !important;
-    }
-
     #kgp-center-controls button {
       pointer-events: auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.45);
       border: none;
-      border-radius: 50%;
+      border-radius: 999px;
       color: #fff;
       padding: 0;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      backdrop-filter: blur(4px);
     }
     #kgp-center-controls .kgp-seek-btn {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
     }
     #kgp-center-controls .kgp-seek-btn svg {
       width: 24px;
       height: 24px;
     }
     #kgp-center-controls .kgp-play-btn {
-      width: 64px;
-      height: 64px;
-      background: rgba(0, 0, 0, 0.55);
+      width: 60px;
+      height: 60px;
     }
     #kgp-center-controls .kgp-play-btn svg {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
     }
   }
 </style>
@@ -123,8 +169,10 @@
 <body>
 <div id="player"></div>
 
+<!-- Same versions as player.phimapi.com -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/artplayer/5.4.0/artplayer.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <script>
 (function () {
   'use strict';
@@ -136,24 +184,28 @@
     return;
   }
 
+  // Determine if this is an m3u8 (HLS) or direct mp4 URL
   var isHls = /\.m3u8/i.test(videoUrl);
 
   var art = new Artplayer({
     container: '#player',
     url: videoUrl,
-    muted: false,       // BẬT TIẾNG MẶC ĐỊNH
-    autoplay: true,     // Cố gắng tự phát
+    muted: false,
+    autoplay: true,
     autoSize: false,
     autoMini: true,
     loop: false,
     mutex: true,
     setting: true,
-    pip: true,          // Phát trong nền (PIP)
+    pip: true,
     flip: false,
+    // Lock button removed per request — was mobile-only anyway (see
+    // CSS note above) and this fully disables the plugin rather than
+    // just hiding it, so no leftover DOM/behavior.
     lock: false,
     fastForward: true,
-    playbackRate: true, // Tốc độ phát
-    aspectRatio: true,  // Tỷ lệ khung hình
+    playbackRate: true,
+    aspectRatio: true,
     theme: '#ff0057',
     fullscreen: true,
     fullscreenWeb: false,
@@ -165,7 +217,7 @@
         Play: 'Phát',
         Pause: 'Dừng',
         'Show Setting': 'Cài đặt',
-        'PIP Mode': 'Phát trong nền',
+        'PIP Mode': 'Ảnh-trong-ảnh',
         Fullscreen: 'Phóng to',
         'Play Speed': 'Tốc độ phát',
         'Aspect Ratio': 'Tỷ lệ khung hình',
@@ -195,6 +247,26 @@
         },
       },
       {
+        // Mobile-only: manual rotate/"go big" button, top-right corner.
+        // See the #kgp-rotate-btn CSS above for how it works.
+        name: 'kgp-rotate',
+        html:
+          '<button type="button" id="kgp-rotate-btn" aria-label="Xoay màn hình" onclick="window.__kgpToggleRotate(event)">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zm-7.93 7.93v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.92h-2.02c-.14.87-.48 1.72-1.02 2.51z"/></svg>' +
+          '</button>',
+        style: {
+          position: 'absolute',
+          top: '12px',
+          right: '12px',
+          zIndex: 30,
+          pointerEvents: 'auto',
+        },
+      },
+      {
+        // Mobile-only overlay: play/pause + ±10s seek, centered on the
+        // video itself. See the #kgp-center-controls CSS above for why
+        // — this is what lets the bottom icon row shrink enough for
+        // fullscreen to stop being pushed off-screen on narrow phones.
         name: 'kgp-center-controls',
         html:
           '<div id="kgp-center-controls">' +
@@ -237,7 +309,7 @@
         index: 11,
         html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32"><path fill="currentColor" d="M26 18A10 10 0 1 1 16 8h4v5l6-6-6-6v5h-4a12 12 0 1 0 12 12Z"/><path fill="currentColor" d="M19.63 22.13a2.84 2.84 0 0 1-1.28-.27 2.44 2.44 0 0 1-.89-.77 3.6 3.6 0 0 1-.52-1.25 7.7 7.7 0 0 1-.17-1.68 8 8 0 0 1 .17-1.68 3.7 3.7 0 0 1 .52-1.25 2.44 2.44 0 0 1 .89-.77 2.84 2.84 0 0 1 1.28-.27 2.44 2.44 0 0 1 2.16 1 5.23 5.23 0 0 1 .7 2.93 5.23 5.23 0 0 1-.7 2.93 2.44 2.44 0 0 1-2.16 1.08m0-1.22a1.07 1.07 0 0 0 1-.55 3.4 3.4 0 0 0 .37-1.51v-1.38a3.3 3.3 0 0 0-.29-1.5 1.23 1.23 0 0 0-2.06 0 3.3 3.3 0 0 0-.29 1.5v1.38a3.4 3.4 0 0 0 .29 1.51 1.06 1.06 0 0 0 .98.55m-9 1.09v-1.18h2v-5.19l-1.86 1-.55-1.06 2.32-1.3H14v6.5h1.78V22z"/></svg>',
         tooltip: '10 giây sau',
-        click: function () { art.seek = art.currentTime - 10; },
+        click: function () { art.seek = art.currentTime + 10; },
       },
     ],
     customType: isHls
@@ -251,6 +323,7 @@
               art.hls = hls;
               art.on('destroy', function () { hls.destroy(); });
 
+              // ── Quality selector — only show if stream has multiple levels ──
               var qualityAdded = false;
               var hlsReady = false;
               var artReady = false;
@@ -258,6 +331,7 @@
               function tryAddQuality() {
                 if (qualityAdded || !hlsReady || !artReady) return;
                 var levels = hls.levels || [];
+                // Only show quality picker when there are 2+ levels to switch between
                 if (levels.length <= 1) return;
                 qualityAdded = true;
 
@@ -322,23 +396,53 @@
       : undefined,
   });
 
-  /* Window Functions */
+  // ===================================================================
+  // Center overlay controls (mobile only — see CSS at the top for why).
+  // Defined as plain window functions so the inline onclick= handlers in
+  // the layer's HTML string can reach them regardless of Artplayer's
+  // internal event-binding, and stopPropagation so tapping a button
+  // doesn't also trigger any handler on the elements underneath it.
+  // ===================================================================
   window.__kgpRewind = function (e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (e) e.stopPropagation();
     art.seek = art.currentTime - 10;
   };
   window.__kgpForward = function (e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (e) e.stopPropagation();
     art.seek = art.currentTime + 10;
   };
   window.__kgpTogglePlay = function (e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (e) e.stopPropagation();
     if (art.playing) {
       art.pause();
     } else {
       art.play();
     }
   };
+
+  // Manual rotate: enters fullscreen + rotates the player 90° via CSS
+  // (see .art-video-player.kgp-rotated above) — never touches the
+  // Screen Orientation Lock API, so the phone stays free to be held
+  // however the person wants; tapping again undoes both.
+  window.__kgpToggleRotate = function (e) {
+    if (e) e.stopPropagation();
+    var $player = art.template.$player;
+    var isRotated = $player.classList.contains('kgp-rotated');
+    if (isRotated) {
+      $player.classList.remove('kgp-rotated');
+      if (art.fullscreen) art.fullscreen = false;
+    } else {
+      $player.classList.add('kgp-rotated');
+      if (!art.fullscreen) art.fullscreen = true;
+    }
+  };
+
+  // If fullscreen is exited some other way (Esc key, system back
+  // gesture, browser UI), drop the rotated layout too so it doesn't
+  // get stuck rotated outside of fullscreen.
+  art.on('fullscreen', function (isFullscreen) {
+    if (!isFullscreen) art.template.$player.classList.remove('kgp-rotated');
+  });
 
   var KGP_PLAY_ICON = '<path fill="currentColor" d="M8 5v14l11-7z"/>';
   var KGP_PAUSE_ICON = '<path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
@@ -349,38 +453,36 @@
     icon.innerHTML = art.playing ? KGP_PAUSE_ICON : KGP_PLAY_ICON;
   }
 
-  art.on('play', kgpSyncCenterIcon);
-  art.on('pause', kgpSyncCenterIcon);
+  // Mirror the same events Artplayer's own built-in play/pause button
+  // listens to (video:playing / video:pause), so the overlay icon
+  // reflects real playback state rather than just method calls.
+  art.on('video:playing', kgpSyncCenterIcon);
+  art.on('video:pause', kgpSyncCenterIcon);
   art.on('video:ended', kgpSyncCenterIcon);
   art.on('ready', kgpSyncCenterIcon);
 
-  /* Lắng nghe sự kiện để đồng bộ bộ nút giữa màn hình theo thanh controls */
-  art.on('control', function (show) {
-    var centerControls = document.getElementById('kgp-center-controls');
-    if (!centerControls) return;
-    if (show) {
-      centerControls.style.opacity = '1';
-      centerControls.style.visibility = 'visible';
-    } else {
-      centerControls.style.opacity = '0';
-      centerControls.style.visibility = 'hidden';
-    }
-  });
+  // ===================================================================
+  // BRIDGE: notify the parent window about player events so the
+  // WatchPage can implement auto-next, progress tracking, etc.
+  // ===================================================================
 
-  /* Bridge gửi thông báo trang mẹ */
   function postToParent(payload) {
     try {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage(payload, '*');
       }
-    } catch (_) {}
+    } catch (_) {
+      // Silently ignore if parent is inaccessible
+    }
   }
 
+  // Video ended → parent can auto-advance to next episode
   art.on('video:ended', function () {
     postToParent({ event: 'ended' });
-    postToParent('ended');
+    postToParent('ended'); // string format fallback
   });
 
+  // Periodic time updates → parent can track watch progress
   art.on('video:timeupdate', function () {
     postToParent({
       event: 'timeupdate',
@@ -390,6 +492,7 @@
     });
   });
 
+  // Video ready (duration known)
   art.on('ready', function () {
     postToParent({
       event: 'ready',
@@ -397,10 +500,14 @@
     });
   });
 
+  // Error
   art.on('video:error', function () {
     postToParent({ event: 'error' });
   });
 
+  // ===================================================================
+  // INBOUND: accept commands from the parent window (seek, pause, etc.)
+  // ===================================================================
   window.addEventListener('message', function (e) {
     if (!e.data || typeof e.data !== 'object') return;
     if (e.data.action === 'seek' && typeof e.data.time === 'number') {

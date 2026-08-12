@@ -15,10 +15,11 @@ import {
 
 import { EpisodeList, MovieRow } from '@/components/movie';
 import { ROUTES } from '@/constants';
-import { useMovieDetail, useMoviesInGenre } from '@/hooks';
+import { useMovieDetail, useMoviesInGenre, useMoviesBySlug, useSearchMovies } from '@/hooks';
 import { usePlayerStore, useHistoryStore } from '@/store';
 import { getMoviePoster } from '@/utils';
-import type { Episode } from '@/types';
+import { normalizeVi } from '@/utils/searchRank';
+import type { Episode, MovieListItem } from '@/types';
 
 /* ------------------------------------------------------------------ */
 /* Animation variants                                                  */
@@ -62,21 +63,104 @@ function resolveIndices(
 /* Related movies — "Bạn cũng có thể thích"                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Pulls a "franchise" search keyword out of a movie title, e.g.
+ * "Thám Tử Lừng Danh Conan 28: Dư Ảnh Của Độc Nhân" -> "Thám Tử Lừng
+ * Danh Conan", "Lật Mặt 7: Một Điều Ước" -> "Lật Mặt". Only returns a
+ * value when something was actually stripped (a subtitle, a sequel
+ * number, or a "Phần"/"Tập" marker) — a bare one-off title like "Mai"
+ * is left alone so we don't fire off a noisy single-word keyword
+ * search that would just surface unrelated movies that happen to share
+ * a common word.
+ */
+function extractFranchiseKeyword(name?: string): string | undefined {
+  if (!name) return undefined;
+  const trimmed = name.trim();
+  const base = trimmed
+    .split(/[:\-–—]/)[0]
+    .replace(/\s+(phần|tập)\s+[ivxlcdm\d]+\s*$/i, '')
+    .replace(/\s+\d+\s*$/, '')
+    .trim();
+
+  if (!base || base.length < 4) return undefined;
+  if (normalizeVi(base) === normalizeVi(trimmed)) return undefined;
+  return base;
+}
+
+function dedupeBySlugCapped(items: MovieListItem[], cap: number): MovieListItem[] {
+  const seen = new Set<string>();
+  const out: MovieListItem[] = [];
+  for (const m of items) {
+    if (!m?.slug || seen.has(m.slug) || out.length >= cap) continue;
+    seen.add(m.slug);
+    out.push(m);
+  }
+  return out;
+}
+
 function RelatedMovies({
+  name,
   categorySlug,
+  countrySlug,
+  isChieuRap,
   currentSlug,
 }: {
+  name?: string;
   categorySlug?: string;
+  countrySlug?: string;
+  isChieuRap?: boolean;
   currentSlug?: string;
 }) {
   const { t } = useTranslation();
-  const { data } = useMoviesInGenre(categorySlug, { page: 1 });
 
-  const related = (data?.items ?? [])
-    .filter((m) => m.slug !== currentSlug)
-    .slice(0, 12);
+  // Tier 1: same franchise/series — e.g. watching a Conan movie surfaces
+  // other Conan movies, watching "Lật Mặt 7" surfaces other "Lật Mặt"
+  // entries. Keyword search, then require the result's own title to
+  // still start with the franchise keyword so unrelated partial-word
+  // matches from the search API get filtered back out.
+  const franchiseKeyword = extractFranchiseKeyword(name);
+  const { data: franchiseData } = useSearchMovies({
+    keyword: franchiseKeyword ?? '',
+    limit: 24,
+  });
+  const normalizedFranchiseKeyword = franchiseKeyword ? normalizeVi(franchiseKeyword) : '';
+  const franchiseMatches = (franchiseData?.items ?? []).filter(
+    (m) =>
+      m.slug !== currentSlug &&
+      normalizeVi(m.name ?? '').startsWith(normalizedFranchiseKeyword),
+  );
 
-  if (!categorySlug || related.length === 0) return null;
+  // Tier 2: same "phim chiếu rạp" (cinema release) + same country — e.g.
+  // watching a Vietnamese cinema release surfaces other Vietnamese
+  // cinema releases instead of generic same-genre picks.
+  const { data: chieuRapData } = useMoviesBySlug(
+    isChieuRap ? 'phim-chieu-rap' : undefined,
+    { page: 1 },
+  );
+  const chieuRapMatches = (chieuRapData?.items ?? []).filter((m) => {
+    if (m.slug === currentSlug) return false;
+    if (!countrySlug) return true;
+    const itemCountries = (m as unknown as { country?: Array<{ slug: string }> }).country;
+    return Array.isArray(itemCountries)
+      ? itemCountries.some((c) => c?.slug === countrySlug)
+      : true;
+  });
+
+  // Tier 3 (fallback): same genre, narrowed by country when we have one
+  // — always fetched so there's something to fill the row with once
+  // tiers 1-2 run dry.
+  const { data: genreData } = useMoviesInGenre(categorySlug, {
+    page: 1,
+    country: countrySlug,
+  });
+  const genreMatches = (genreData?.items ?? []).filter((m) => m.slug !== currentSlug);
+
+  const related = dedupeBySlugCapped(
+    [...franchiseMatches, ...chieuRapMatches, ...genreMatches],
+    12,
+  );
+
+  if (related.length === 0) return null;
 
   return (
     <section className="mt-12">
@@ -837,7 +921,10 @@ export default function WatchPage() {
 
           {/* You might also like */}
           <RelatedMovies
+            name={movie.name}
             categorySlug={movie.category?.[0]?.slug}
+            countrySlug={movie.country?.[0]?.slug}
+            isChieuRap={movie.chieurap}
             currentSlug={movie.slug}
           />
         </div>
