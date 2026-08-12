@@ -80,9 +80,29 @@
       gap: 36px;
       width: 100%;
       pointer-events: none;
+      /* Hidden by default, same as Artplayer's own bottom bar
+         (`.art-bottom` starts at opacity:0) — only shown while
+         `.art-control-show` / `.art-hover` is present on the player
+         root, and faded out again after Artplayer's own auto-hide
+         timer (CONTROL_HIDE_TIME) removes those classes. */
+      opacity: 0;
+      transition: opacity var(--art-transition-duration, .2s) ease;
+    }
+    .art-video-player.art-control-show #kgp-center-controls,
+    .art-video-player.art-hover #kgp-center-controls {
+      opacity: 1;
+    }
+    /* Buttons themselves must stop accepting taps while faded out —
+       otherwise they'd still be clickable (just invisible) since
+       `pointer-events` on a child isn't blocked by a `none` parent. */
+    #kgp-center-controls button {
+      pointer-events: none;
+    }
+    .art-video-player.art-control-show #kgp-center-controls button,
+    .art-video-player.art-hover #kgp-center-controls button {
+      pointer-events: auto;
     }
     #kgp-center-controls button {
-      pointer-events: auto;
       display: flex;
       align-items: center;
       justify-content: center;
