@@ -71,8 +71,18 @@ export function useAnalyticsStats(days: 7 | 14 | 30) {
       if (viewsErr) throw viewsErr;
       if (movieErr) throw movieErr;
 
-      const pageViews = views ?? [];
-      const mViews = movieViews ?? [];
+      const pageViews = (views ?? []) as {
+        path: string;
+        referrer_type: string;
+        created_at: string;
+      }[];
+      const mViews = (movieViews ?? []) as {
+        movie_slug: string;
+        movie_name: string;
+        categories: string[] | null;
+        countries: string[] | null;
+        created_at: string;
+      }[];
       const today = new Date();
 
       // Daily series — always show all `days` days, zero-filled.
