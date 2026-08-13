@@ -54,11 +54,19 @@ export function trackPageView(path: string): void {
   // traffic out of "trang được truy cập nhiều nhất" noise.
   if (path.startsWith('/thong-ke')) return;
 
-  void supabase.from('page_views').insert({
-    path,
-    referrer_type: classifyReferrer(),
-    session_id: getSessionId(),
-  });
+  void supabase
+    .from('page_views')
+    .insert({
+      path,
+      referrer_type: classifyReferrer(),
+      session_id: getSessionId(),
+    })
+    .then(({ error }) => {
+      // Fire-and-forget on purpose (never blocks rendering), but a
+      // silent failure here means the /thong-ke dashboard just never
+      // moves with zero explanation — log it so that's debuggable.
+      if (error) console.error('[analytics] trackPageView failed:', error);
+    });
 }
 
 interface MovieViewInput {
@@ -87,11 +95,16 @@ export function trackMovieView(movie: MovieViewInput): void {
     // than silently dropping the event.
   }
 
-  void supabase.from('movie_views').insert({
-    movie_slug: movie.slug,
-    movie_name: movie.name,
-    categories: (movie.categories ?? []).map((c) => c.name),
-    countries: (movie.countries ?? []).map((c) => c.name),
-    session_id: getSessionId(),
-  });
+  void supabase
+    .from('movie_views')
+    .insert({
+      movie_slug: movie.slug,
+      movie_name: movie.name,
+      categories: (movie.categories ?? []).map((c) => c.name),
+      countries: (movie.countries ?? []).map((c) => c.name),
+      session_id: getSessionId(),
+    })
+    .then(({ error }) => {
+      if (error) console.error('[analytics] trackMovieView failed:', error);
+    });
 }
