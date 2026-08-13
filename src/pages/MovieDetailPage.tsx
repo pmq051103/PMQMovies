@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { useFavoriteStore, useHistoryStore } from '@/store';
 import { useMovieDetail, useMoviesByGenre } from '@/hooks';
 import { ROUTES, MOVIE_STATUS } from '@/constants';
 import { getImageUrl, getMoviePoster, onImgError } from '@/utils';
+import { trackMovieView } from '@/lib/analytics';
 import type { MovieListItem } from '@/types';
 
 const fadeIn = {
@@ -55,6 +56,18 @@ export default function MovieDetailPage() {
   const { data: recommendationsData } = useMoviesByGenre(firstCategorySlug, {
     page: 1,
   });
+
+  // Records a "movie view" (name + genres + countries) once per session
+  // for the /thong-ke dashboard's "Xem theo thể loại/quốc gia" panels.
+  useEffect(() => {
+    if (!movie) return;
+    trackMovieView({
+      slug: movie.slug,
+      name: movie.name,
+      categories: movie.category,
+      countries: movie.country,
+    });
+  }, [movie]);
 
   const { isFavorite, addFavorite, removeFavorite } = useFavoriteStore();
   const { getHistoryItem } = useHistoryStore();

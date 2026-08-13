@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import WelcomeTip from "@/components/common/WelcomeTip";
 import ScrollToTopButton from "@/components/common/ScrollToTopButton";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { useAnalyticsTracking } from "@/hooks/useAnalyticsTracking";
 
 /**
  * Root layout — Header + <Outlet /> + Footer.
@@ -16,6 +17,11 @@ import { useLanguageStore } from "@/store/useLanguageStore";
 const MainLayout: React.FC = () => {
   const { language } = useLanguageStore();
   const { pathname } = useLocation();
+
+  // Records every page view (direct link, search engine, in-site nav —
+  // all of it) to Supabase for the /thong-ke dashboard. No-ops if
+  // Supabase env vars aren't set.
+  useAnalyticsTracking();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });

@@ -1,0 +1,142 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+
+export interface StatsData {
+  totalViews: number;
+  todayViews: number;
+  movieViewCount: number;
+  uniqueMoviesWatched: number;
+  directCount: number;
+  referralCount: number;
+  dailySeries: { label: string; value: number }[];
+  topMovies: { name: string; count: number }[];
+  topCategories: { name: string; count: number }[];
+  topCountries: { name: string; count: number }[];
+  topPaths: { path: string; count: number }[];
+}
+
+function isSameDay(iso: string, ref: Date): boolean {
+  const d = new Date(iso);
+  return (
+    d.getFullYear() === ref.getFullYear() &&
+    d.getMonth() === ref.getMonth() &&
+    d.getDate() === ref.getDate()
+  );
+}
+
+function dayKey(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function topN(counts: Map<string, number>, n: number): { name: string; count: number }[] {
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([name, count]) => ({ name, count }));
+}
+
+/**
+ * Fetches page_views + movie_views from Supabase for the last `days`
+ * days and reduces them into everything the /thong-ke dashboard needs.
+ * Aggregation happens client-side (fine at this traffic scale) rather
+ * than via SQL views, so the dashboard needs zero backend functions —
+ * just the two tables from supabase-schema.sql.
+ */
+export function useAnalyticsStats(days: 7 | 14 | 30) {
+  return useQuery<StatsData>({
+    queryKey: ['analyticsStats', days],
+    queryFn: async () => {
+      if (!supabase) {
+        throw new Error(
+          'Supabase chưa được cấu hình — thêm VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY vào .env',
+        );
+      }
+
+      const since = new Date();
+      since.setDate(since.getDate() - (days - 1));
+      since.setHours(0, 0, 0, 0);
+
+      const [{ data: views, error: viewsErr }, { data: movieViews, error: movieErr }] =
+        await Promise.all([
+          supabase
+            .from('page_views')
+            .select('path, referrer_type, created_at')
+            .gte('created_at', since.toISOString()),
+          supabase
+            .from('movie_views')
+            .select('movie_slug, movie_name, categories, countries, created_at')
+            .gte('created_at', since.toISOString()),
+        ]);
+
+      if (viewsErr) throw viewsErr;
+      if (movieErr) throw movieErr;
+
+      const pageViews = views ?? [];
+      const mViews = movieViews ?? [];
+      const today = new Date();
+
+      // Daily series — always show all `days` days, zero-filled.
+      const dailyBuckets = new Map<string, number>();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dailyBuckets.set(dayKey(d), 0);
+      }
+      for (const v of pageViews) {
+        const key = dayKey(new Date(v.created_at));
+        if (dailyBuckets.has(key)) {
+          dailyBuckets.set(key, (dailyBuckets.get(key) ?? 0) + 1);
+        }
+      }
+
+      // Referrer split
+      let directCount = 0;
+      let referralCount = 0;
+      for (const v of pageViews) {
+        if (v.referrer_type === 'direct') directCount++;
+        else referralCount++;
+      }
+
+      // Top paths
+      const pathCounts = new Map<string, number>();
+      for (const v of pageViews) {
+        pathCounts.set(v.path, (pathCounts.get(v.path) ?? 0) + 1);
+      }
+
+      // Top movies / categories / countries
+      const movieCounts = new Map<string, number>();
+      const categoryCounts = new Map<string, number>();
+      const countryCounts = new Map<string, number>();
+      const uniqueSlugs = new Set<string>();
+
+      for (const v of mViews) {
+        uniqueSlugs.add(v.movie_slug);
+        movieCounts.set(v.movie_name, (movieCounts.get(v.movie_name) ?? 0) + 1);
+        for (const c of v.categories ?? []) {
+          categoryCounts.set(c, (categoryCounts.get(c) ?? 0) + 1);
+        }
+        for (const c of v.countries ?? []) {
+          countryCounts.set(c, (countryCounts.get(c) ?? 0) + 1);
+        }
+      }
+
+      return {
+        totalViews: pageViews.length,
+        todayViews: pageViews.filter((v) => isSameDay(v.created_at, today)).length,
+        movieViewCount: mViews.length,
+        uniqueMoviesWatched: uniqueSlugs.size,
+        directCount,
+        referralCount,
+        dailySeries: [...dailyBuckets.entries()].map(([label, value]) => ({ label, value })),
+        topMovies: topN(movieCounts, 5),
+        topCategories: topN(categoryCounts, 5),
+        topCountries: topN(countryCounts, 5),
+        topPaths: [...pathCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([path, count]) => ({ path, count })),
+      };
+    },
+    staleTime: 60_000,
+  });
+}
