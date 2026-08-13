@@ -15,6 +15,11 @@ export interface StatsData {
   topPaths: { path: string; count: number }[];
 }
 
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 function isSameDay(iso: string, ref: Date): boolean {
   const d = new Date(iso);
   return (
@@ -36,15 +41,19 @@ function topN(counts: Map<string, number>, n: number): { name: string; count: nu
 }
 
 /**
- * Fetches page_views + movie_views from Supabase for the last `days`
- * days and reduces them into everything the /thong-ke dashboard needs.
- * Aggregation happens client-side (fine at this traffic scale) rather
- * than via SQL views, so the dashboard needs zero backend functions —
- * just the two tables from supabase-schema.sql.
+ * Fetches page_views + movie_views from Supabase for an arbitrary
+ * [from, to] date range and reduces them into everything the
+ * /thong-ke dashboard needs. Aggregation happens client-side (fine at
+ * this traffic scale) rather than via SQL views, so the dashboard
+ * needs zero backend functions — just the two tables from
+ * supabase-schema.sql.
  */
-export function useAnalyticsStats(days: 7 | 14 | 30) {
+export function useAnalyticsStats({ from, to }: DateRange) {
+  const fromIso = from.toISOString();
+  const toIso = to.toISOString();
+
   return useQuery<StatsData>({
-    queryKey: ['analyticsStats', days],
+    queryKey: ['analyticsStats', fromIso, toIso],
     queryFn: async () => {
       if (!supabase) {
         throw new Error(
@@ -52,20 +61,18 @@ export function useAnalyticsStats(days: 7 | 14 | 30) {
         );
       }
 
-      const since = new Date();
-      since.setDate(since.getDate() - (days - 1));
-      since.setHours(0, 0, 0, 0);
-
       const [{ data: views, error: viewsErr }, { data: movieViews, error: movieErr }] =
         await Promise.all([
           supabase
             .from('page_views')
             .select('path, referrer_type, created_at')
-            .gte('created_at', since.toISOString()),
+            .gte('created_at', fromIso)
+            .lte('created_at', toIso),
           supabase
             .from('movie_views')
             .select('movie_slug, movie_name, categories, countries, created_at')
-            .gte('created_at', since.toISOString()),
+            .gte('created_at', fromIso)
+            .lte('created_at', toIso),
         ]);
 
       if (viewsErr) throw viewsErr;
@@ -85,12 +92,15 @@ export function useAnalyticsStats(days: 7 | 14 | 30) {
       }[];
       const today = new Date();
 
-      // Daily series — always show all `days` days, zero-filled.
+      // Daily series — zero-filled for every day between from and to.
       const dailyBuckets = new Map<string, number>();
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        dailyBuckets.set(dayKey(d), 0);
+      const cursor = new Date(from);
+      cursor.setHours(0, 0, 0, 0);
+      const end = new Date(to);
+      end.setHours(0, 0, 0, 0);
+      while (cursor <= end) {
+        dailyBuckets.set(dayKey(cursor), 0);
+        cursor.setDate(cursor.getDate() + 1);
       }
       for (const v of pageViews) {
         const key = dayKey(new Date(v.created_at));

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   FaChartBar,
@@ -17,7 +17,28 @@ import LineChart from '@/components/stats/LineChart';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
 import { isAnalyticsConfigured } from '@/lib/supabase';
 
-type RangeDays = 7 | 14 | 30;
+type PresetDays = 7 | 14 | 30;
+type Preset = 'today' | PresetDays | 'custom';
+
+/** yyyy-mm-dd for a Date, in local time (what <input type="date"> needs). */
+function toDateInputValue(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function presetRange(preset: 'today' | PresetDays): { from: Date; to: Date } {
+  const to = new Date();
+  const from = new Date();
+  if (preset === 'today') {
+    from.setHours(0, 0, 0, 0);
+  } else {
+    from.setDate(from.getDate() - (preset - 1));
+    from.setHours(0, 0, 0, 0);
+  }
+  return { from, to };
+}
 
 function StatCard({
   icon: Icon,
@@ -79,12 +100,31 @@ function BarRow({ name, count, max }: { name: string; count: number; max: number
 }
 
 function StatsDashboard() {
-  const [range, setRange] = useState<RangeDays>(7);
+  const [preset, setPreset] = useState<Preset>('today');
+  // Custom range inputs — plain yyyy-mm-dd strings from <input type="date">.
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
+  const range = useMemo(() => {
+    if (preset !== 'custom') return presetRange(preset);
+    if (customFrom && customTo) {
+      const from = new Date(`${customFrom}T00:00:00`);
+      const to = new Date(`${customTo}T23:59:59.999`);
+      // Guard against an inverted range (to picked before from).
+      return from <= to ? { from, to } : { from: to, to: from };
+    }
+    // Custom mode chosen but not both dates filled in yet — fall back
+    // to today so the dashboard still shows data.
+    return presetRange('today');
+  }, [preset, customFrom, customTo]);
+
   const { data, isLoading, isError, error } = useAnalyticsStats(range);
 
   const maxMovie = Math.max(...(data?.topMovies.map((m) => m.count) ?? [0]));
   const maxCategory = Math.max(...(data?.topCategories.map((c) => c.count) ?? [0]));
   const maxCountry = Math.max(...(data?.topCountries.map((c) => c.count) ?? [0]));
+
+  const isCustom = preset === 'custom';
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
@@ -102,20 +142,65 @@ function StatsDashboard() {
           </div>
         </div>
 
-        <div className="flex overflow-hidden rounded-lg border border-gray-800">
-          {([7, 14, 30] as RangeDays[]).map((d) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex overflow-hidden rounded-lg border border-gray-800">
             <button
-              key={d}
-              onClick={() => setRange(d)}
+              onClick={() => setPreset('today')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
-                range === d
+                preset === 'today'
                   ? 'bg-red-600 text-white'
                   : 'bg-gray-900 text-gray-400 hover:text-white'
               }`}
             >
-              {d} ngày
+              Hôm nay
             </button>
-          ))}
+            {([7, 14, 30] as PresetDays[]).map((d) => (
+              <button
+                key={d}
+                onClick={() => setPreset(d)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  preset === d
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-900 text-gray-400 hover:text-white'
+                }`}
+              >
+                {d} ngày
+              </button>
+            ))}
+            <button
+              onClick={() => setPreset('custom')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                isCustom
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-900 text-gray-400 hover:text-white'
+              }`}
+            >
+              Tùy chỉnh
+            </button>
+          </div>
+
+          {isCustom && (
+            <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5">
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo || toDateInputValue(new Date())}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="bg-transparent text-sm text-gray-200 outline-none [color-scheme:dark]"
+                aria-label="Từ ngày"
+              />
+              <span className="text-xs text-gray-500">đến</span>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom || undefined}
+                max={toDateInputValue(new Date())}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="bg-transparent text-sm text-gray-200 outline-none [color-scheme:dark]"
+                aria-label="Đến ngày"
+              />
+            </div>
+          )}
         </div>
       </div>
 
