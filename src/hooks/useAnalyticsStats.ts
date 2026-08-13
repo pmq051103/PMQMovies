@@ -41,6 +41,30 @@ function topN(counts: Map<string, number>, n: number): { name: string; count: nu
 }
 
 /**
+ * Supabase limits a single query to 1000 rows. Traffic above that gets
+ * silently truncated, which made every dashboard number — especially
+ * "Trang được truy cập nhiều nhất" — wrong once a range accumulated more
+ * than 1000 page_views. Fetch in 1000-row pages until we have everything.
+ */
+async function fetchAllRows<T>(
+  buildQuery: (range: { start: number; end: number }) => PromiseLike<{
+    data: T[] | null;
+    error: unknown;
+  }>,
+): Promise<T[]> {
+  const all: T[] = [];
+  const PAGE = 1000;
+  for (let start = 0; ; start += PAGE) {
+    const { data, error } = await buildQuery({ start, end: start + PAGE - 1 });
+    if (error) throw error;
+    const page = (data ?? []) as T[];
+    all.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return all;
+}
+
+/**
  * Fetches page_views + movie_views from Supabase for an arbitrary
  * [from, to] date range and reduces them into everything the
  * /thong-ke dashboard needs. Aggregation happens client-side (fine at
@@ -60,29 +84,39 @@ export function useAnalyticsStats({ from, to }: DateRange) {
           'Supabase chưa được cấu hình — thêm VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY vào .env',
         );
       }
+      const db = supabase;
 
-      const [{ data: views, error: viewsErr }, { data: movieViews, error: movieErr }] =
-        await Promise.all([
-          supabase
+      const [pageViews, movieViews] = await Promise.all([
+        fetchAllRows<{
+          path: string;
+          referrer_type: string;
+          created_at: string;
+        }>(({ start, end }) =>
+          db
             .from('page_views')
             .select('path, referrer_type, created_at')
             .gte('created_at', fromIso)
-            .lte('created_at', toIso),
-          supabase
+            .lte('created_at', toIso)
+            .order('created_at', { ascending: true })
+            .range(start, end),
+        ),
+        fetchAllRows<{
+          movie_slug: string;
+          movie_name: string;
+          categories: string[] | null;
+          countries: string[] | null;
+          created_at: string;
+        }>(({ start, end }) =>
+          db
             .from('movie_views')
             .select('movie_slug, movie_name, categories, countries, created_at')
             .gte('created_at', fromIso)
-            .lte('created_at', toIso),
-        ]);
+            .lte('created_at', toIso)
+            .order('created_at', { ascending: true })
+            .range(start, end),
+        ),
+      ]);
 
-      if (viewsErr) throw viewsErr;
-      if (movieErr) throw movieErr;
-
-      const pageViews = (views ?? []) as {
-        path: string;
-        referrer_type: string;
-        created_at: string;
-      }[];
       const mViews = (movieViews ?? []) as {
         movie_slug: string;
         movie_name: string;
@@ -148,9 +182,9 @@ export function useAnalyticsStats({ from, to }: DateRange) {
         directCount,
         referralCount,
         dailySeries: [...dailyBuckets.entries()].map(([label, value]) => ({ label, value })),
-        topMovies: topN(movieCounts, 5),
-        topCategories: topN(categoryCounts, 5),
-        topCountries: topN(countryCounts, 5),
+        topMovies: topN(movieCounts, 10),
+        topCategories: topN(categoryCounts, 10),
+        topCountries: topN(countryCounts, 10),
         topPaths: [...pathCounts.entries()]
           .sort((a, b) => b[1] - a[1])
           .map(([path, count]) => ({ path, count })),

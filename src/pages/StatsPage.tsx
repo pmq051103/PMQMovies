@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaChartBar,
   FaUsers,
@@ -121,16 +120,16 @@ function StatsDashboard() {
     return presetRange('today');
   }, [preset, customFrom, customTo]);
 
-  const { data, isLoading, isFetching, isError, error } = useAnalyticsStats(range);
+  const { data, isLoading, isError, error } = useAnalyticsStats(range);
 
   const maxMovie = Math.max(...(data?.topMovies.map((m) => m.count) ?? [0]));
   const maxCategory = Math.max(...(data?.topCategories.map((c) => c.count) ?? [0]));
   const maxCountry = Math.max(...(data?.topCountries.map((c) => c.count) ?? [0]));
 
-  // Top-pages pagination — 15 per page. Reset back to page 1 whenever the
+  // Top-pages pagination — 20 per page. Reset back to page 1 whenever the
   // selected date range changes, so switching ranges never leaves you
   // stranded on a page number that no longer has data.
-  const PATHS_PER_PAGE = 15;
+  const PATHS_PER_PAGE = 20;
   const [pathsPage, setPathsPage] = useState(1);
   useEffect(() => {
     setPathsPage(1);
