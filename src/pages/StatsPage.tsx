@@ -107,6 +107,13 @@ function StatsDashboard() {
   // Custom range inputs — plain yyyy-mm-dd strings from <input type="date">.
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+  // Bumped by the "Tải lại" button. presetRange() calls `new Date()` for
+  // `to`, and that value is otherwise frozen inside the useMemo below until
+  // preset/customFrom/customTo change — so without this, clicking refresh
+  // re-queried the exact same [from, to] window every time and could never
+  // surface anything that happened after the page first loaded. Including
+  // it in the deps forces `to` to recompute to "now" on every click.
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const range = useMemo(() => {
     if (preset !== 'custom') return presetRange(preset);
@@ -119,7 +126,8 @@ function StatsDashboard() {
     // Custom mode chosen but not both dates filled in yet — fall back
     // to today so the dashboard still shows data.
     return presetRange('today');
-  }, [preset, customFrom, customTo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset, customFrom, customTo, refreshTick]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useAnalyticsStats(range);
 
@@ -223,7 +231,13 @@ function StatsDashboard() {
 
           <button
             type="button"
-            onClick={() => void refetch()}
+            onClick={() => {
+              // Bump the tick first so a preset range's `to` recomputes to
+              // "now" — otherwise refetch() would just re-run the exact
+              // same [from, to] window and look like it did nothing.
+              setRefreshTick((t) => t + 1);
+              void refetch();
+            }}
             disabled={isFetching}
             className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
             title="Tải lại số liệu"

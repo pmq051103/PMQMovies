@@ -150,19 +150,31 @@ export default function MovieDetailPage() {
   // "Xem Ngay" và phần số tập/danh sách tập, vì lúc này chỉ có trailer để
   // xem chứ chưa có tập phim thật nào.
   const isTrailerOnly = movie.status === MOVIE_STATUS.TRAILER;
-  // Một phim được coi là "có tập" nếu có dữ liệu episode thực sự (server_data),
-  // bất kể type là series/hoathinh/tvshows/single — vì hoạt hình và TV shows
-  // nhiều tập nhưng type khác 'series' vẫn cần hiện danh sách tập. Dùng cho
-  // nút "Xem ngay" — phim lẻ (1 tập) vẫn cần nút này để bấm xem.
+  // Một phim được coi là "có tập" nếu có dữ liệu episode THỰC SỰ xem được
+  // (server_data chứa link_embed hoặc link_m3u8 khác rỗng) — bất kể type
+  // là series/hoathinh/tvshows/single, vì hoạt hình và TV shows nhiều tập
+  // nhưng type khác 'series' vẫn cần hiện danh sách tập. Dùng cho nút
+  // "Xem ngay" — phim lẻ (1 tập) vẫn cần nút này để bấm xem.
+  // Chỉ đếm ep.server_data.length > 0 là chưa đủ: phim mới thêm vào catalog
+  // (như phim vừa công chiếu rạp, chưa có bản online) đôi khi có sẵn 1 dòng
+  // server_data "giữ chỗ" nhưng link_embed/link_m3u8 đều rỗng — nút Xem
+  // Ngay khi đó dẫn tới player trống, nên phải kiểm tra link thật có dữ liệu.
   const hasEpisodes =
     !isTrailerOnly &&
-    episodes.length > 0 && episodes.some((ep) => ep.server_data?.length > 0);
-  // True when the movie actually has more than 1 episode to pick between
-  // (a real series). Used to decide between showing "12 / 24" vs "1 Tập"
-  // in the badge, and between a numbered grid vs a single "Full" entry
-  // in the episode list below.
+    episodes.some((ep) =>
+      ep.server_data?.some((sd) => sd.link_embed?.trim() || sd.link_m3u8?.trim()),
+    );
+  // True when the movie actually has more than 1 REAL episode to pick
+  // between (a real series) — same "has a real link" filter as above.
+  // Used to decide between showing "12 / 24" vs "1 Tập" in the badge, and
+  // between a numbered grid vs a single "Full" entry in the episode list.
   const hasEpisodeList =
-    !isTrailerOnly && episodes.some((ep) => (ep.server_data?.length ?? 0) > 1);
+    !isTrailerOnly &&
+    episodes.some(
+      (ep) =>
+        (ep.server_data?.filter((sd) => sd.link_embed?.trim() || sd.link_m3u8?.trim())
+          .length ?? 0) > 1,
+    );
 
   return (
     <>
