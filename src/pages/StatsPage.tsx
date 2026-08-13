@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaChartBar,
   FaUsers,
@@ -9,6 +10,8 @@ import {
   FaGlobe,
   FaTags,
   FaHashtag,
+  FaChevronLeft,
+  FaChevronRight,
 } from 'react-icons/fa';
 
 import StatsPasswordGate, { isStatsAuthed } from '@/pages/StatsPasswordGate';
@@ -118,11 +121,27 @@ function StatsDashboard() {
     return presetRange('today');
   }, [preset, customFrom, customTo]);
 
-  const { data, isLoading, isError, error } = useAnalyticsStats(range);
+  const { data, isLoading, isFetching, isError, error } = useAnalyticsStats(range);
 
   const maxMovie = Math.max(...(data?.topMovies.map((m) => m.count) ?? [0]));
   const maxCategory = Math.max(...(data?.topCategories.map((c) => c.count) ?? [0]));
   const maxCountry = Math.max(...(data?.topCountries.map((c) => c.count) ?? [0]));
+
+  // Top-pages pagination — 15 per page. Reset back to page 1 whenever the
+  // selected date range changes, so switching ranges never leaves you
+  // stranded on a page number that no longer has data.
+  const PATHS_PER_PAGE = 15;
+  const [pathsPage, setPathsPage] = useState(1);
+  useEffect(() => {
+    setPathsPage(1);
+  }, [range.from.getTime(), range.to.getTime()]);
+  const totalPathsPages = Math.max(1, Math.ceil((data?.topPaths.length ?? 0) / PATHS_PER_PAGE));
+  const currentPathsPage = Math.min(pathsPage, totalPathsPages);
+  const pagedPaths =
+    data?.topPaths.slice(
+      (currentPathsPage - 1) * PATHS_PER_PAGE,
+      currentPathsPage * PATHS_PER_PAGE,
+    ) ?? [];
 
   const isCustom = preset === 'custom';
 
@@ -291,14 +310,42 @@ function StatsDashboard() {
             {data.topPaths.length === 0 ? (
               <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
             ) : (
-              <div className="space-y-2.5">
-                {data.topPaths.map((p) => (
-                  <div key={p.path} className="flex items-center justify-between text-sm">
-                    <span className="truncate text-gray-300">{p.path}</span>
-                    <span className="font-semibold text-white">{p.count}</span>
+              <>
+                <div className="space-y-2.5">
+                  {pagedPaths.map((p) => (
+                    <div key={p.path} className="flex items-center justify-between text-sm">
+                      <span className="truncate text-gray-300">{p.path}</span>
+                      <span className="font-semibold text-white">{p.count}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {totalPathsPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between border-t border-gray-800 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setPathsPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPathsPage === 1}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                    >
+                      <FaChevronLeft className="h-2.5 w-2.5" />
+                      Trước
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Trang {currentPathsPage}/{totalPathsPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPathsPage((p) => Math.min(totalPathsPages, p + 1))}
+                      disabled={currentPathsPage === totalPathsPages}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                    >
+                      Sau
+                      <FaChevronRight className="h-2.5 w-2.5" />
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </Panel>
         </>

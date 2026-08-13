@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 export interface StatsData {
@@ -153,10 +153,13 @@ export function useAnalyticsStats({ from, to }: DateRange) {
         topCountries: topN(countryCounts, 5),
         topPaths: [...pathCounts.entries()]
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 8)
           .map(([path, count]) => ({ path, count })),
       };
     },
     staleTime: 60_000,
+    // Keeps the previous range's data on screen while the new range
+    // fetches, instead of dropping to `undefined` and flashing the
+    // whole dashboard back to a loading skeleton on every click.
+    placeholderData: keepPreviousData,
   });
 }
