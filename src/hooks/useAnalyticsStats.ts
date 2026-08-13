@@ -13,6 +13,7 @@ export interface StatsData {
   topCategories: { name: string; count: number }[];
   topCountries: { name: string; count: number }[];
   topPaths: { path: string; count: number }[];
+  topReferrers: { name: string; count: number }[];
 }
 
 export interface DateRange {
@@ -38,6 +39,27 @@ function topN(counts: Map<string, number>, n: number): { name: string; count: nu
     .sort((a, b) => b[1] - a[1])
     .slice(0, n)
     .map(([name, count]) => ({ name, count }));
+}
+
+/**
+ * Turns a referrer URL into a friendly source label: strips www,
+ * drops the TLD suffix (google.com + google.com.vn → "Google"),
+ * and maps a few well-known social/search domains to their brand.
+ */
+function referrerLabel(url: string | null): string {
+  if (!url) return 'Không rõ';
+  try {
+    const { hostname } = new URL(url);
+    const host = hostname.replace(/^www\./, '');
+    const brand = ['google', 'facebook', 'zalo', 'tiktok', 'youtube', 'instagram'].find((b) =>
+      host.startsWith(b),
+    );
+    if (brand) return brand.charAt(0).toUpperCase() + brand.slice(1);
+    const tld = host.split('.');
+    return tld.length > 2 ? tld.slice(0, -2).join('.') : tld[0];
+  } catch {
+    return 'Không rõ';
+  }
 }
 
 /**
@@ -90,11 +112,12 @@ export function useAnalyticsStats({ from, to }: DateRange) {
         fetchAllRows<{
           path: string;
           referrer_type: string;
+          referrer_url: string | null;
           created_at: string;
         }>(({ start, end }) =>
           db
             .from('page_views')
-            .select('path, referrer_type, created_at')
+            .select('path, referrer_type, referrer_url, created_at')
             .gte('created_at', fromIso)
             .lte('created_at', toIso)
             .order('created_at', { ascending: true })
@@ -146,9 +169,14 @@ export function useAnalyticsStats({ from, to }: DateRange) {
       // Referrer split
       let directCount = 0;
       let referralCount = 0;
+      const referrerCounts = new Map<string, number>();
       for (const v of pageViews) {
         if (v.referrer_type === 'direct') directCount++;
-        else referralCount++;
+        else {
+          referralCount++;
+          const label = referrerLabel(v.referrer_url);
+          referrerCounts.set(label, (referrerCounts.get(label) ?? 0) + 1);
+        }
       }
 
       // Top paths
@@ -188,6 +216,7 @@ export function useAnalyticsStats({ from, to }: DateRange) {
         topPaths: [...pathCounts.entries()]
           .sort((a, b) => b[1] - a[1])
           .map(([path, count]) => ({ path, count })),
+        topReferrers: topN(referrerCounts, 10),
       };
     },
     staleTime: 60_000,

@@ -259,6 +259,23 @@ function StatsDashboard() {
                   { label: 'Trang khác', value: data.referralCount, color: '#3b82f6' },
                 ]}
               />
+              {data.topReferrers.length > 0 && (
+                <div className="mt-4 border-t border-gray-800 pt-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Nguồn dẫn chi tiết
+                  </p>
+                  <div className="space-y-2">
+                    {data.topReferrers.map((r) => (
+                      <div key={r.name} className="flex items-center justify-between text-sm">
+                        <span className="truncate text-gray-300" title={r.name}>
+                          {r.name}
+                        </span>
+                        <span className="font-semibold text-white">{r.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Panel>
             <Panel icon={FaChartBar} title="Truy cập theo ngày">
               <div className="h-44">

@@ -26,16 +26,18 @@ function getSessionId(): string {
  * referrer at all, OR the referrer is our own domain (in-site
  * navigation isn't a new "visit source"). Anything else — Google,
  * Facebook, another site's link, etc — counts as referral traffic.
+ * For referral views we also keep the full referrer URL so the
+ * dashboard can break traffic down by specific source.
  */
-function classifyReferrer(): 'direct' | 'referral' {
+function getReferrerInfo(): { type: 'direct' | 'referral'; url: string | null } {
   try {
     const ref = document.referrer;
-    if (!ref) return 'direct';
+    if (!ref) return { type: 'direct', url: null };
     const refHost = new URL(ref).hostname;
-    if (refHost === window.location.hostname) return 'direct';
-    return 'referral';
+    if (refHost === window.location.hostname) return { type: 'direct', url: null };
+    return { type: 'referral', url: ref.slice(0, 2048) };
   } catch {
-    return 'direct';
+    return { type: 'direct', url: null };
   }
 }
 
@@ -54,11 +56,13 @@ export function trackPageView(path: string): void {
   // traffic out of "trang được truy cập nhiều nhất" noise.
   if (path.startsWith('/thong-ke')) return;
 
+  const referrer = getReferrerInfo();
   void supabase
     .from('page_views')
     .insert({
       path,
-      referrer_type: classifyReferrer(),
+      referrer_type: referrer.type,
+      referrer_url: referrer.url,
       session_id: getSessionId(),
     })
     .then(({ error }) => {

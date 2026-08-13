@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+
 interface LineChartPoint {
   label: string;
   value: number;
@@ -10,12 +12,16 @@ interface LineChartProps {
 /**
  * Minimal SVG area/line chart — no charting library needed for a
  * single daily-count series. Scales to the max value in the series.
+ * Hovering a data point shows its exact count in a tooltip.
  */
 export default function LineChart({ points }: LineChartProps) {
   const width = 600;
   const height = 180;
   const padX = 10;
   const padY = 16;
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
 
   const max = Math.max(...points.map((p) => p.value), 1);
   const yFor = (v: number) => height - padY - (v / max) * (height - padY * 2);
@@ -53,7 +59,12 @@ export default function LineChart({ points }: LineChartProps) {
     const midX = width / 2;
 
     return (
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" preserveAspectRatio="none">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-full w-full overflow-visible"
+        preserveAspectRatio="none"
+      >
         {gridlines}
         {gradientDef}
         {point && (
@@ -69,10 +80,42 @@ export default function LineChart({ points }: LineChartProps) {
               opacity={point.value > 0 ? 1 : 0.35}
               strokeDasharray={point.value > 0 ? undefined : '4 4'}
             />
-            <circle cx={midX} cy={y} r={point.value > 0 ? 5 : 3} fill="#ef4444" />
+            <circle
+              cx={midX}
+              cy={y}
+              r={point.value > 0 ? 5 : 3}
+              fill="#ef4444"
+              className="cursor-pointer"
+              onMouseEnter={() => setHovered(0)}
+              onMouseMove={() => setHovered(0)}
+              onMouseLeave={() => setHovered(null)}
+            />
             <text x={midX} y={height + 4} fontSize="9" textAnchor="middle" className="fill-gray-600">
               {point.label}
             </text>
+            {hovered === 0 && (
+              <g pointerEvents="none">
+                <rect
+                  x={midX - 4}
+                  y={y - 4}
+                  width="8"
+                  height="8"
+                  fill="#fff"
+                  opacity="0.9"
+                  rx="1.5"
+                />
+                <text
+                  x={midX}
+                  y={y - 9}
+                  fontSize="12"
+                  fontWeight="700"
+                  textAnchor="middle"
+                  className="fill-white"
+                >
+                  {point.value}
+                </text>
+              </g>
+            )}
           </>
         )}
       </svg>
@@ -90,17 +133,67 @@ export default function LineChart({ points }: LineChartProps) {
   const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ');
   const areaPath = `${linePath} L${coords[coords.length - 1]?.x ?? 0},${height} L${coords[0]?.x ?? 0},${height} Z`;
 
+  const handleMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const relX = e.clientX - rect.left;
+    const viewX = (relX / rect.width) * width;
+    const idx = Math.round((viewX - padX) / stepX);
+    setHovered(Math.max(0, Math.min(points.length - 1, idx)));
+  };
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" preserveAspectRatio="none">
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-full w-full overflow-visible"
+      preserveAspectRatio="none"
+      onMouseMove={handleMove}
+      onMouseLeave={() => setHovered(null)}
+    >
       {gridlines}
       {gradientDef}
 
       <path d={areaPath} fill="url(#statsAreaFill)" />
       <path d={linePath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
 
-      {coords.map((c) => (
-        <circle key={c.label} cx={c.x} cy={c.y} r={c.value > 0 ? 4 : 2.5} fill="#ef4444" />
+      {coords.map((c, i) => (
+        <circle
+          key={c.label}
+          cx={c.x}
+          cy={c.y}
+          r={hovered === i ? 7 : c.value > 0 ? 4 : 2.5}
+          fill={hovered === i ? '#f87171' : '#ef4444'}
+          className="cursor-pointer"
+          style={{ transition: 'r 0.15s ease' }}
+          onMouseEnter={() => setHovered(i)}
+          onMouseLeave={() => setHovered(null)}
+        />
       ))}
+
+      {hovered !== null && coords[hovered] && (
+        <g pointerEvents="none">
+          <rect
+            x={coords[hovered].x - 5}
+            y={coords[hovered].y - 5}
+            width="10"
+            height="10"
+            fill="#fff"
+            opacity="0.9"
+            rx="2"
+          />
+          <text
+            x={coords[hovered].x}
+            y={coords[hovered].y - 11}
+            fontSize="12"
+            fontWeight="700"
+            textAnchor="middle"
+            className="fill-white"
+          >
+            {coords[hovered].value}
+          </text>
+        </g>
+      )}
 
       {coords.map((c) => (
         <text
