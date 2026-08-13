@@ -17,26 +17,56 @@ interface LineChartProps {
 export default function LineChart({ points }: LineChartProps) {
   const width = 600;
   const height = 180;
-  const padX = 10;
-  const padY = 16;
+  // Left padding is wider than the others — it's where the Y-axis value
+  // labels (0 / max / in-between) live, so the plot area starts after them
+  // instead of the labels overlapping the first data point.
+  const padLeft = 34;
+  const padRight = 10;
+  const padTop = 10;
+  const padBottom = 16;
+
+  const plotLeft = padLeft;
+  const plotRight = width - padRight;
+  const plotTop = padTop;
+  const plotBottom = height - padBottom;
 
   const svgRef = useRef<SVGSVGElement>(null);
   const [hovered, setHovered] = useState<number | null>(null);
 
   const max = Math.max(...points.map((p) => p.value), 1);
-  const yFor = (v: number) => height - padY - (v / max) * (height - padY * 2);
+  const yFor = (v: number) => plotBottom - (v / max) * (plotBottom - plotTop);
 
-  const gridlines = [0.25, 0.5, 0.75].map((f) => (
+  // Y-axis: baseline (0) + 3 evenly-spaced gridlines up to max.
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({
+    value: Math.round(max * f),
+    y: plotBottom - f * (plotBottom - plotTop),
+  }));
+
+  const gridlines = yTicks.map((t) => (
     <line
-      key={f}
-      x1={0}
-      x2={width}
-      y1={height - padY - f * (height - padY * 2)}
-      y2={height - padY - f * (height - padY * 2)}
+      key={t.y}
+      x1={plotLeft}
+      x2={plotRight}
+      y1={t.y}
+      y2={t.y}
       stroke="currentColor"
       className="text-gray-800"
       strokeDasharray="4 4"
     />
+  ));
+
+  const yAxisLabels = yTicks.map((t) => (
+    <text
+      key={`y-${t.y}`}
+      x={plotLeft - 8}
+      y={t.y}
+      dy="3"
+      fontSize="9"
+      textAnchor="end"
+      className="fill-gray-600"
+    >
+      {t.value}
+    </text>
   ));
 
   const gradientDef = (
@@ -51,12 +81,12 @@ export default function LineChart({ points }: LineChartProps) {
   // A single-day range (e.g. "Hôm nay") only has one bucket — there's no
   // second point to draw a line to, so a normal line/area chart would
   // just show a lone dot in the corner. Draw a flat reference line
-  // spanning the full width instead, centered dot + label, so it still
-  // reads as a chart rather than looking broken.
+  // spanning the full plot width instead, centered dot + label, so it
+  // still reads as a chart rather than looking broken.
   if (points.length <= 1) {
     const point = points[0];
-    const y = point ? yFor(point.value) : height - padY;
-    const midX = width / 2;
+    const y = point ? yFor(point.value) : plotBottom;
+    const midX = (plotLeft + plotRight) / 2;
 
     return (
       <svg
@@ -66,12 +96,13 @@ export default function LineChart({ points }: LineChartProps) {
         preserveAspectRatio="none"
       >
         {gridlines}
+        {yAxisLabels}
         {gradientDef}
         {point && (
           <>
             <line
-              x1={padX}
-              x2={width - padX}
+              x1={plotLeft}
+              x2={plotRight}
               y1={y}
               y2={y}
               stroke="#ef4444"
@@ -122,23 +153,23 @@ export default function LineChart({ points }: LineChartProps) {
     );
   }
 
-  const stepX = (width - padX * 2) / (points.length - 1);
+  const stepX = (plotRight - plotLeft) / (points.length - 1);
 
   const coords = points.map((p, i) => {
-    const x = padX + i * stepX;
+    const x = plotLeft + i * stepX;
     const y = yFor(p.value);
     return { x, y, ...p };
   });
 
   const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ');
-  const areaPath = `${linePath} L${coords[coords.length - 1]?.x ?? 0},${height} L${coords[0]?.x ?? 0},${height} Z`;
+  const areaPath = `${linePath} L${coords[coords.length - 1]?.x ?? 0},${plotBottom} L${coords[0]?.x ?? 0},${plotBottom} Z`;
 
   const handleMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
     const relX = e.clientX - rect.left;
     const viewX = (relX / rect.width) * width;
-    const idx = Math.round((viewX - padX) / stepX);
+    const idx = Math.round((viewX - plotLeft) / stepX);
     setHovered(Math.max(0, Math.min(points.length - 1, idx)));
   };
 
@@ -152,6 +183,7 @@ export default function LineChart({ points }: LineChartProps) {
       onMouseLeave={() => setHovered(null)}
     >
       {gridlines}
+      {yAxisLabels}
       {gradientDef}
 
       <path d={areaPath} fill="url(#statsAreaFill)" />
