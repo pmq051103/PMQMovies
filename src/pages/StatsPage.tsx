@@ -11,6 +11,7 @@ import {
   FaHashtag,
   FaChevronLeft,
   FaChevronRight,
+  FaSyncAlt,
 } from 'react-icons/fa';
 
 import StatsPasswordGate, { isStatsAuthed } from '@/pages/StatsPasswordGate';
@@ -120,7 +121,7 @@ function StatsDashboard() {
     return presetRange('today');
   }, [preset, customFrom, customTo]);
 
-  const { data, isLoading, isError, error } = useAnalyticsStats(range);
+  const { data, isLoading, isError, error, refetch, isFetching } = useAnalyticsStats(range);
 
   const maxMovie = Math.max(...(data?.topMovies.map((m) => m.count) ?? [0]));
   const maxCategory = Math.max(...(data?.topCategories.map((c) => c.count) ?? [0]));
@@ -219,6 +220,17 @@ function StatsDashboard() {
               />
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+            title="Tải lại số liệu"
+          >
+            <FaSyncAlt className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+            Tải lại
+          </button>
         </div>
       </div>
 
