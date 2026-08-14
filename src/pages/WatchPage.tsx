@@ -243,6 +243,21 @@ export default function WatchPage() {
     setCurrentEpisode({ serverIndex, episodeIndex });
   }, [serverIndex, episodeIndex, setCurrentEpisode]);
 
+  // Cinema mode is per-viewing-session UI state, not a user preference —
+  // but it lives in the global `usePlayerStore`, so it doesn't reset on
+  // its own. Since navigating between episodes of the SAME movie reuses
+  // this same WatchPage instance (React Router doesn't remount it for a
+  // route that only changes ?tap/&sv), cinemaMode correctly survives
+  // episode switches. But it also survives switching to a DIFFERENT
+  // movie for the same reason, which is the bug: leaving movie A while
+  // fullscreen, then opening movie B, opens B already fullscreen because
+  // the store's cinemaMode was never told "this is a new movie". Force
+  // it back to false whenever the slug itself changes so only an actual
+  // movie switch resets it, not an episode switch.
+  useEffect(() => {
+    setCinemaMode(false);
+  }, [slug, setCinemaMode]);
+
   /* ---- Resume prompt ---- */
   const savedProgress = useMemo(() => {
     if (!slug || !currentEpisodeData) return 0;
