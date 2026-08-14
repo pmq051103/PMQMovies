@@ -579,22 +579,6 @@ export default function WatchPage() {
         )}
       </AnimatePresence>
 
-      {/* Small "exit cinema mode" pill that floats top-right in cinema mode */}
-      <AnimatePresence>
-        {cinemaMode && (
-          <motion.button
-            type="button"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            onClick={() => setCinemaMode(false)}
-            className="fixed right-4 top-4 z-[70] rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
-          >
-            {t('watch.exitCinema', 'Thoát rạp')}  (Esc)
-          </motion.button>
-        )}
-      </AnimatePresence>
-
       <motion.div
         variants={fadeIn}
         initial="hidden"
