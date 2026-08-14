@@ -22,7 +22,12 @@ interface Maintenance {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!configured()) {
-    res.status(500).json({ error: "supabase env not configured" });
+    // Distinguish exactly which env var is missing — much faster to
+    // diagnose on Vercel than a blanket "not configured" message.
+    const missing: string[] = [];
+    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    res.status(500).json({ error: "supabase env not configured", missing });
     return;
   }
 
@@ -33,7 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(200).json(data);
     } catch (err) {
       console.error("[adminMaintenance GET] failed:", err);
-      res.status(502).json({ error: "failed to load maintenance" });
+      // Surface the real underlying error (e.g. the exact Supabase/
+      // PostgREST response) instead of a generic message — this
+      // endpoint is public-read anyway, and a vague 502 with no detail
+      // is nearly impossible to debug from the browser alone.
+      res.status(502).json({
+        error: "failed to load maintenance",
+        detail: err instanceof Error ? err.message : String(err),
+      });
     }
     return;
   }
@@ -67,7 +79,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(200).json({ ok: true });
     } catch (err) {
       console.error("[adminMaintenance POST] failed:", err);
-      res.status(502).json({ error: "failed to save maintenance" });
+      res.status(502).json({
+        error: "failed to save maintenance",
+        detail: err instanceof Error ? err.message : String(err),
+      });
     }
     return;
   }

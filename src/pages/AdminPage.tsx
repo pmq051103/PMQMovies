@@ -211,8 +211,11 @@ const QUILT_FORMATS = [
   "italic",
   "underline",
   "strike",
+  // Bulleted/numbered lists are both the single "list" format (its value
+  // is "ordered" or "bullet" — see the toolbar config above). "bullet" is
+  // not a format name on its own; listing it here made Quill try to
+  // register a nonexistent format and throw on every load.
   "list",
-  "bullet",
   "align",
   "link",
   "image",
