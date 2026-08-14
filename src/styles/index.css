@@ -315,3 +315,70 @@ img {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------------------------ */
+/* ReactQuill (admin dashboard) — dark theme overrides. The admin page  */
+/* is always dark (bg-gray-950), but Quill's default "snow" theme is   */
+/* light. These overrides pin it to a dark surface regardless of the    */
+/* site-wide light/dark mode.                                          */
+/* ------------------------------------------------------------------ */
+.admin-quill {
+  color: #e4e4e7;
+}
+.admin-quill .ql-toolbar.ql-snow {
+  border-color: #2a2a32;
+  background-color: #141418;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+.admin-quill .ql-container.ql-snow {
+  border-color: #2a2a32;
+  background-color: #0f0f13;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+  font-size: 0.9rem;
+  min-height: 220px;
+}
+.admin-quill .ql-editor {
+  min-height: 220px;
+  color: #e4e4e7;
+}
+.admin-quill .ql-snow .ql-stroke {
+  stroke: #a1a1aa;
+}
+.admin-quill .ql-snow .ql-fill {
+  fill: #a1a1aa;
+}
+.admin-quill .ql-snow .ql-picker {
+  color: #a1a1aa;
+}
+.admin-quill .ql-snow .ql-picker-options {
+  background-color: #141418;
+  border-color: #2a2a32;
+}
+.admin-quill .ql-snow .ql-tooltip {
+  background-color: #141418;
+  border-color: #2a2a32;
+  color: #e4e4e7;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.admin-quill .ql-snow .ql-tooltip input[type="text"] {
+  background-color: #0f0f13;
+  border: 1px solid #2a2a32;
+  color: #e4e4e7;
+}
+.admin-quill .ql-snow .ql-picker-label:hover,
+.admin-quill .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  color: #f5f5f7;
+}
+.admin-quill .ql-snow .ql-picker-label:hover .ql-stroke,
+.admin-quill .ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-stroke {
+  stroke: #f5f5f7;
+}
+.admin-quill .ql-snow .ql-editor a {
+  color: #f6121d;
+}
+.admin-quill .ql-snow .ql-editor.ql-blank::before {
+  color: #52525b;
+  font-style: normal;
+}
