@@ -1,474 +1,382 @@
-import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import {
+  FaChartBar,
   FaUsers,
+  FaCalendarDay,
   FaPlay,
+  FaFilm,
   FaGlobe,
   FaTags,
-  FaFilm,
-  FaChartBar,
-  FaCalendarDay,
   FaHashtag,
+  FaChevronLeft,
+  FaChevronRight,
+  FaSyncAlt,
 } from 'react-icons/fa';
-import { fetchStats, type StatsResponse } from '@/api/trackService';
 
-/* ------------------------------------------------------------------ */
-/* Thống kê — dashboard quản lý lượt truy cập web + xem phim theo      */
-/* thể loại/quốc gia. Dữ liệu đọc từ api/stats.ts (Supabase).          */
-/* Biểu đồ vẽ bằng SVG thuần (không thư viện nặng).                    */
-/*                                                                     */
-/* Component `StatsDashboard` được nhúng trong trang /admin. Trang      */
-/* cũ /thong-ke giờ redirect về /admin.                                */
-/* ------------------------------------------------------------------ */
+import { Navigate } from 'react-router-dom';
+import DonutChart from '@/components/stats/DonutChart';
+import LineChart from '@/components/stats/LineChart';
+import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
+import { isAnalyticsConfigured } from '@/lib/supabase';
 
-const DAYS_OPTIONS = [7, 14, 30] as const;
+type PresetDays = 7 | 14 | 30;
+type Preset = 'today' | PresetDays | 'custom';
 
-const SOURCE_LABELS: Record<string, string> = {
-  direct: 'Vào trực tiếp',
-  search: 'Công cụ tìm kiếm',
-  social: 'Mạng xã hội',
-  external: 'Trang khác',
-};
+/** yyyy-mm-dd for a Date, in local time (what <input type="date"> needs). */
+function toDateInputValue(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
-const SOURCE_COLORS: Record<string, string> = {
-  direct: '#ef4444',
-  search: '#f59e0b',
-  social: '#22c55e',
-  external: '#3b82f6',
-};
-
-/* ------------------------------------------------------------------ */
-/* StatCard — KPI card                                                */
-/* ------------------------------------------------------------------ */
+function presetRange(preset: 'today' | PresetDays): { from: Date; to: Date } {
+  const to = new Date();
+  const from = new Date();
+  if (preset === 'today') {
+    from.setHours(0, 0, 0, 0);
+  } else {
+    from.setDate(from.getDate() - (preset - 1));
+    from.setHours(0, 0, 0, 0);
+  }
+  return { from, to };
+}
 
 function StatCard({
-  icon,
+  icon: Icon,
   label,
   value,
-  accent,
 }: {
-  icon: React.ReactNode;
+  icon: React.ElementType;
   label: string;
-  value: string | number;
-  accent?: string;
+  value: number | string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 backdrop-blur-sm">
-      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-        <span
-          className={`flex h-6 w-6 items-center justify-center rounded-lg ${
-            accent ?? 'bg-gray-800 text-red-400'
-          }`}
-        >
-          {icon}
-        </span>
+    <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <Icon className="h-3.5 w-3.5" />
         {label}
       </div>
-      <div className="text-3xl font-bold text-white">{value}</div>
+      <p className="text-3xl font-bold text-white">{value}</p>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* AreaChart — truy cập theo ngày                                     */
-/* ------------------------------------------------------------------ */
-
-function AreaChart({ data }: { data: Array<{ day: string; visits: number }> }) {
-  const width = 560;
-  const height = 180;
-  const padX = 8;
-  const padTop = 14;
-  const padBottom = 24;
-
-  const values = data.map((d) => d.visits);
-  const max = Math.max(...values, 1);
-
-  const stepX = (width - padX * 2) / Math.max(data.length - 1, 1);
-  const points = data.map((d, i) => ({
-    x: padX + i * stepX,
-    y: padTop + (height - padTop - padBottom) * (1 - d.visits / max),
-  }));
-
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-  const areaPath = `${linePath} L${points[points.length - 1]?.x ?? padX},${height - padBottom} L${padX},${height - padBottom} Z`;
-
-  const showAxis = data.length <= 14;
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-40 w-full"
-      role="img"
-      aria-label="Truy cập theo ngày"
-    >
-      {/* horizontal gridlines */}
-      {[0.25, 0.5, 0.75, 1].map((f) => (
-        <line
-          key={f}
-          x1={padX}
-          x2={width - padX}
-          y1={padTop + (height - padTop - padBottom) * (1 - f)}
-          y2={padTop + (height - padTop - padBottom) * (1 - f)}
-          stroke="#27272a"
-          strokeWidth="1"
-          strokeDasharray="4 4"
-        />
-      ))}
-
-      <defs>
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ef4444" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#ef4444" stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-
-      <path d={areaPath} fill="url(#areaGrad)" />
-      <path d={linePath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
-
-      {/* value dots */}
-      {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="3" fill="#fca5a5" stroke="#ef4444" strokeWidth="1.5">
-          <title>{`${data[i].day}: ${data[i].visits} lượt`}</title>
-        </circle>
-      ))}
-
-      {/* x-axis labels */}
-      {showAxis &&
-        data.map((d, i) =>
-          i % Math.ceil(data.length / 7) === 0 || i === data.length - 1 ? (
-            <text
-              key={i}
-              x={points[i].x}
-              y={height - 6}
-              textAnchor="middle"
-              className="fill-gray-500"
-              fontSize="9"
-            >
-              {d.day.slice(5)}
-            </text>
-          ) : null,
-        )}
-    </svg>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* DonutChart — nguồn truy cập                                        */
-/* ------------------------------------------------------------------ */
-
-function DonutChart({ items }: { items: Array<{ name: string; value: number }> }) {
-  const total = items.reduce((s, i) => s + i.value, 0);
-  const radius = 52;
-  const stroke = 16;
-  const circumference = 2 * Math.PI * radius;
-  let offset = 0;
-
-  if (total === 0) {
-    return (
-      <div className="flex h-40 flex-col items-center justify-center text-sm text-gray-500">
-        Chưa có dữ liệu
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-      <div className="relative">
-        <svg viewBox="0 0 140 140" className="h-36 w-36">
-          <circle
-            cx="70"
-            cy="70"
-            r={radius}
-            fill="none"
-            stroke="#27272a"
-            strokeWidth={stroke}
-          />
-          {items.map((item) => {
-            const fraction = item.value / total;
-            const dash = fraction * circumference;
-            const el = (
-              <circle
-                key={item.name}
-                cx="70"
-                cy="70"
-                r={radius}
-                fill="none"
-                stroke={SOURCE_COLORS[item.name] ?? '#ef4444'}
-                strokeWidth={stroke}
-                strokeDasharray={`${dash} ${circumference - dash}`}
-                strokeDashoffset={-offset}
-                strokeLinecap="butt"
-                transform="rotate(-90 70 70)"
-              >
-                <title>{`${SOURCE_LABELS[item.name] ?? item.name}: ${item.value}`}</title>
-              </circle>
-            );
-            offset += dash;
-            return el;
-          })}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-white">{total}</span>
-          <span className="text-[10px] text-gray-500">lượt</span>
-        </div>
-      </div>
-
-      <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item.name} className="flex items-center gap-2 text-sm">
-            <span
-              className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: SOURCE_COLORS[item.name] ?? '#ef4444' }}
-            />
-            <span className="w-36 text-gray-300">
-              {SOURCE_LABELS[item.name] ?? item.name}
-            </span>
-            <span className="font-semibold text-white">{item.value}</span>
-            <span className="w-12 text-right text-xs text-gray-500">
-              {Math.round((item.value / total) * 100)}%
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* BarList — top phim / thể loại / quốc gia (ngang)                   */
-/* ------------------------------------------------------------------ */
-
-function BarList({
+function Panel({
+  icon: Icon,
   title,
-  icon,
-  items,
+  children,
+  className = '',
 }: {
+  icon: React.ElementType;
   title: string;
-  icon: React.ReactNode;
-  items: Array<{ name: string; value: number }>;
+  children: React.ReactNode;
+  className?: string;
 }) {
-  const max = Math.max(...items.map((i) => i.value), 1);
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 backdrop-blur-sm">
-      <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-200">
-        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-800 text-red-400">
-          {icon}
+    <div className={`rounded-xl border border-gray-800 bg-gray-900/60 p-5 ${className}`}>
+      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+        <span className="flex h-6 w-6 items-center justify-center rounded bg-red-600/15 text-red-500">
+          <Icon className="h-3 w-3" />
         </span>
         {title}
-      </h3>
-      {items.length === 0 ? (
-        <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
-      ) : (
-        <ul className="space-y-2.5">
-          {items.map((item) => (
-            <li key={item.name} className="flex items-center gap-3">
-              <span className="w-36 shrink-0 truncate text-sm text-gray-300" title={item.name}>
-                {item.name}
-              </span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-red-600 to-red-500"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(item.value / max) * 100}%` }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
-                />
-              </div>
-              <span className="w-10 shrink-0 text-right text-sm font-semibold text-white">
-                {item.value}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      </div>
+      {children}
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* StatsDashboard — the stats UI, embedded in the /admin dashboard.    */
-/* ------------------------------------------------------------------ */
+function BarRow({ name, count, max }: { name: string; count: number; max: number }) {
+  const pct = max > 0 ? Math.max((count / max) * 100, 6) : 0;
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <span className="w-24 shrink-0 truncate text-gray-300" title={name}>
+        {name}
+      </span>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
+        <div className="h-full rounded-full bg-red-500" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-6 shrink-0 text-right font-semibold text-white">{count}</span>
+    </div>
+  );
+}
 
 export function StatsDashboard() {
-  const { t } = useTranslation();
-  const [days, setDays] = useState<number>(7);
-  const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [preset, setPreset] = useState<Preset>('today');
+  // Custom range inputs — plain yyyy-mm-dd strings from <input type="date">.
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
+  const range = useMemo(() => {
+    if (preset !== 'custom') return presetRange(preset);
+    if (customFrom && customTo) {
+      const from = new Date(`${customFrom}T00:00:00`);
+      const to = new Date(`${customTo}T23:59:59.999`);
+      // Guard against an inverted range (to picked before from).
+      return from <= to ? { from, to } : { from: to, to: from };
+    }
+    // Custom mode chosen but not both dates filled in yet — fall back
+    // to today so the dashboard still shows data.
+    return presetRange('today');
+  }, [preset, customFrom, customTo]);
+
+  const { data, isLoading, isError, error, refetch, isFetching } = useAnalyticsStats(range);
+
+  const maxMovie = Math.max(...(data?.topMovies.map((m) => m.count) ?? [0]));
+  const maxCategory = Math.max(...(data?.topCategories.map((c) => c.count) ?? [0]));
+  const maxCountry = Math.max(...(data?.topCountries.map((c) => c.count) ?? [0]));
+
+  // Top-pages pagination — 20 per page. Reset back to page 1 whenever the
+  // selected date range changes, so switching ranges never leaves you
+  // stranded on a page number that no longer has data.
+  const PATHS_PER_PAGE = 20;
+  const [pathsPage, setPathsPage] = useState(1);
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(false);
-    fetchStats(days)
-      .then((data) => {
-        if (active) setStats(data);
-      })
-      .catch(() => {
-        if (active) setError(true);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [days]);
+    setPathsPage(1);
+  }, [range.from.getTime(), range.to.getTime()]);
+  const totalPathsPages = Math.max(1, Math.ceil((data?.topPaths.length ?? 0) / PATHS_PER_PAGE));
+  const currentPathsPage = Math.min(pathsPage, totalPathsPages);
+  const pagedPaths =
+    data?.topPaths.slice(
+      (currentPathsPage - 1) * PATHS_PER_PAGE,
+      currentPathsPage * PATHS_PER_PAGE,
+    ) ?? [];
+
+  const isCustom = preset === 'custom';
 
   return (
-    <div>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-red-700 shadow-lg shadow-red-600/30">
-            <FaChartBar className="h-5 w-5 text-white" />
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600/15 text-red-500">
+            <FaChartBar className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold text-white md:text-3xl">
-              {t('seo.statsTitle', 'Thống Kê Truy Cập')}
-            </h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl font-bold text-white sm:text-2xl">Thống Kê Truy Cập</h1>
+            <p className="text-sm text-gray-400">
               Lượt truy cập web và xem phim theo thể loại / quốc gia
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 rounded-xl border border-gray-800 bg-gray-900/60 p-1">
-          {DAYS_OPTIONS.map((d) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex overflow-hidden rounded-lg border border-gray-800">
             <button
-              key={d}
-              type="button"
-              onClick={() => setDays(d)}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                days === d
+              onClick={() => setPreset('today')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                preset === 'today'
                   ? 'bg-red-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'bg-gray-900 text-gray-400 hover:text-white'
               }`}
             >
-              {d} ngày
+              Hôm nay
             </button>
-          ))}
+            {([7, 14, 30] as PresetDays[]).map((d) => (
+              <button
+                key={d}
+                onClick={() => setPreset(d)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  preset === d
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-900 text-gray-400 hover:text-white'
+                }`}
+              >
+                {d} ngày
+              </button>
+            ))}
+            <button
+              onClick={() => setPreset('custom')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                isCustom
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-900 text-gray-400 hover:text-white'
+              }`}
+            >
+              Tùy chỉnh
+            </button>
+          </div>
+
+          {isCustom && (
+            <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5">
+              <input
+                type="date"
+                value={customFrom}
+                max={customTo || toDateInputValue(new Date())}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="bg-transparent text-sm text-gray-200 outline-none [color-scheme:dark]"
+                aria-label="Từ ngày"
+              />
+              <span className="text-xs text-gray-500">đến</span>
+              <input
+                type="date"
+                value={customTo}
+                min={customFrom || undefined}
+                max={toDateInputValue(new Date())}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="bg-transparent text-sm text-gray-200 outline-none [color-scheme:dark]"
+                aria-label="Đến ngày"
+              />
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+            title="Tải lại số liệu"
+          >
+            <FaSyncAlt className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+            Tải lại
+          </button>
         </div>
       </div>
 
-      {loading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-2xl bg-gray-900" />
+      {!isAnalyticsConfigured ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6 text-sm text-amber-300">
+          Supabase chưa được cấu hình. Thêm <code className="text-amber-200">VITE_SUPABASE_URL</code> và{' '}
+          <code className="text-amber-200">VITE_SUPABASE_ANON_KEY</code> vào file <code>.env</code>, sau đó
+          chạy file <code>supabase-schema.sql</code> trong SQL Editor của dự án Supabase (xem README).
+        </div>
+      ) : isError ? (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-300">
+          Không tải được số liệu: {(error as Error)?.message}
+        </div>
+      ) : isLoading || !data ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-900/60" />
           ))}
         </div>
-      )}
-
-      {error && (
-        <div className="rounded-2xl border border-red-900/50 bg-red-950/40 p-6 text-center">
-          <p className="text-red-300">
-            Không đọc được dữ liệu. Kiểm tra biến môi trường{' '}
-            <code className="rounded bg-gray-900 px-2 py-0.5 text-sm">
-              SUPABASE_URL
-            </code>{' '}
-            /{' '}
-            <code className="rounded bg-gray-900 px-2 py-0.5 text-sm">
-              SUPABASE_SERVICE_ROLE_KEY
-            </code>{' '}
-            trên Vercel.
-          </p>
-        </div>
-      )}
-
-      {!loading && !error && stats && (
-        <div className="space-y-6">
-          {/* KPI cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              icon={<FaUsers className="h-3 w-3" />}
-              label="Tổng lượt truy cập"
-              value={stats.total}
-            />
-            <StatCard
-              icon={<FaCalendarDay className="h-3 w-3" />}
-              label="Hôm nay"
-              value={stats.today}
-            />
-            <StatCard
-              icon={<FaPlay className="h-3 w-3" />}
-              label="Lượt xem phim"
-              value={stats.movieTotal}
-            />
-            <StatCard
-              icon={<FaFilm className="h-3 w-3" />}
-              label="Phim được xem"
-              value={stats.topMovies.length}
-            />
+      ) : (
+        <>
+          {/* Stat cards */}
+          <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <StatCard icon={FaUsers} label="Tổng lượt truy cập" value={data.totalViews} />
+            <StatCard icon={FaCalendarDay} label="Hôm nay" value={data.todayViews} />
+            <StatCard icon={FaPlay} label="Lượt xem phim" value={data.movieViewCount} />
+            <StatCard icon={FaFilm} label="Phim được xem" value={data.uniqueMoviesWatched} />
           </div>
 
-          {/* Nguồn truy cập (donut) + truy cập theo ngày (area chart) */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 backdrop-blur-sm">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-200">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-800 text-red-400">
-                  <FaGlobe className="h-3 w-3" />
-                </span>
-                Nguồn truy cập
-              </h3>
-              <DonutChart items={stats.bySource} />
-            </div>
-
-            <div className="rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 backdrop-blur-sm">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-200">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-800 text-red-400">
-                  <FaChartBar className="h-3 w-3" />
-                </span>
-                Truy cập theo ngày
-              </h3>
-              <AreaChart data={stats.byDay} />
-            </div>
+          {/* Referrer donut + daily line chart */}
+          <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Panel icon={FaGlobe} title="Nguồn truy cập">
+              <DonutChart
+                centerLabel={String(data.totalViews)}
+                centerSublabel="lượt"
+                segments={[
+                  { label: 'Vào trực tiếp', value: data.directCount, color: '#ef4444' },
+                  { label: 'Trang khác', value: data.referralCount, color: '#3b82f6' },
+                ]}
+              />
+              {data.topReferrers.length > 0 && (
+                <div className="mt-4 border-t border-gray-800 pt-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Nguồn dẫn chi tiết
+                  </p>
+                  <div className="space-y-2">
+                    {data.topReferrers.map((r) => (
+                      <div key={r.name} className="flex items-center justify-between text-sm">
+                        <span className="truncate text-gray-300" title={r.name}>
+                          {r.name}
+                        </span>
+                        <span className="font-semibold text-white">{r.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Panel>
+            <Panel icon={FaChartBar} title="Truy cập theo ngày">
+              <div className="h-44">
+                <LineChart points={data.dailySeries} />
+              </div>
+            </Panel>
           </div>
 
-          {/* Phim + thể loại + quốc gia */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <BarList
-              title="Phim được xem nhiều nhất"
-              icon={<FaFilm className="h-3 w-3" />}
-              items={stats.topMovies}
-            />
-            <BarList
-              title="Xem theo thể loại"
-              icon={<FaTags className="h-3 w-3" />}
-              items={stats.topGenres}
-            />
-            <BarList
-              title="Xem theo quốc gia"
-              icon={<FaGlobe className="h-3 w-3" />}
-              items={stats.topCountries}
-            />
+          {/* Top movies / categories / countries */}
+          <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Panel icon={FaFilm} title="Phim được xem nhiều nhất">
+              {data.topMovies.length === 0 ? (
+                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {data.topMovies.map((m) => (
+                    <BarRow key={m.name} name={m.name} count={m.count} max={maxMovie} />
+                  ))}
+                </div>
+              )}
+            </Panel>
+            <Panel icon={FaTags} title="Xem theo thể loại">
+              {data.topCategories.length === 0 ? (
+                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {data.topCategories.map((c) => (
+                    <BarRow key={c.name} name={c.name} count={c.count} max={maxCategory} />
+                  ))}
+                </div>
+              )}
+            </Panel>
+            <Panel icon={FaGlobe} title="Xem theo quốc gia">
+              {data.topCountries.length === 0 ? (
+                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {data.topCountries.map((c) => (
+                    <BarRow key={c.name} name={c.name} count={c.count} max={maxCountry} />
+                  ))}
+                </div>
+              )}
+            </Panel>
           </div>
 
-          {/* Trang được truy cập nhiều */}
-          {stats.topPaths.length > 0 && (
-            <div className="rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 backdrop-blur-sm">
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-200">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-800 text-red-400">
-                  <FaHashtag className="h-3 w-3" />
-                </span>
-                Trang được truy cập nhiều nhất
-              </h3>
-              <ul className="space-y-2">
-                {stats.topPaths.map((p) => (
-                  <li
-                    key={p.name}
-                    className="flex items-center gap-3 rounded-lg bg-gray-900/50 px-3 py-2"
-                  >
-                    <span className="flex-1 truncate font-mono text-xs text-gray-300">
-                      {p.name}
+          {/* Top pages */}
+          <Panel icon={FaHashtag} title="Trang được truy cập nhiều nhất">
+            {data.topPaths.length === 0 ? (
+              <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+            ) : (
+              <>
+                <div className="space-y-2.5">
+                  {pagedPaths.map((p) => (
+                    <div key={p.path} className="flex items-center justify-between text-sm">
+                      <span className="truncate text-gray-300">{p.path}</span>
+                      <span className="font-semibold text-white">{p.count}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {totalPathsPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between border-t border-gray-800 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setPathsPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPathsPage === 1}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                    >
+                      <FaChevronLeft className="h-2.5 w-2.5" />
+                      Trước
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Trang {currentPathsPage}/{totalPathsPages}
                     </span>
-                    <span className="text-sm font-semibold text-white">{p.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+                    <button
+                      type="button"
+                      onClick={() => setPathsPage((p) => Math.min(totalPathsPages, p + 1))}
+                      disabled={currentPathsPage === totalPathsPages}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                    >
+                      Sau
+                      <FaChevronRight className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </Panel>
+        </>
       )}
     </div>
   );
@@ -476,6 +384,9 @@ export function StatsDashboard() {
 
 /* ------------------------------------------------------------------ */
 /* Legacy route /thong-ke → redirect to the admin dashboard.           */
+/* StatsDashboard above (the real, populated dashboard — reads         */
+/* page_views/movie_views straight from Supabase client-side) is       */
+/* embedded inside /admin's "Thống kê" tab.                            */
 /* ------------------------------------------------------------------ */
 
 export default function StatsPage() {
