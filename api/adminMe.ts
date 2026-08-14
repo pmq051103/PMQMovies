@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { configured, rpc } from "./_supabase";
+import { configured, rpc } from "./_supabase.js";
 
 /* ------------------------------------------------------------------ */
 /* Admin session check — GET /admin-me                                */

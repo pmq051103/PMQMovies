@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { configured, rpc, bearerToken } from "./_supabase";
+import { configured, rpc, bearerToken } from "./_supabase.js";
 
 /* ------------------------------------------------------------------ */
 /* Admin accounts management — all require a valid admin session.      */
