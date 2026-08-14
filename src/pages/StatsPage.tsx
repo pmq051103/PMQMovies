@@ -47,18 +47,30 @@ function StatCard({
   icon: Icon,
   label,
   value,
+  accent = 'red',
 }: {
   icon: React.ElementType;
   label: string;
   value: number | string;
+  accent?: 'red' | 'blue' | 'emerald' | 'amber';
 }) {
+  const accents: Record<string, string> = {
+    red: 'from-red-500/20 to-red-600/5 text-red-400',
+    blue: 'from-blue-500/20 to-blue-600/5 text-blue-400',
+    emerald: 'from-emerald-500/20 to-emerald-600/5 text-emerald-400',
+    amber: 'from-amber-500/20 to-amber-600/5 text-amber-400',
+  };
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-5">
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 transition-all duration-200 hover:border-gray-700 hover:shadow-lg hover:shadow-black/20">
+      <div
+        className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${accents[accent]}`}
+      >
+        <Icon className="h-4 w-4" />
       </div>
-      <p className="text-3xl font-bold text-white">{value}</p>
+      <p className="text-3xl font-bold tracking-tight text-white">{value}</p>
+      <p className="mt-1 text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
+      {/* Decorative corner glow — purely visual, matches the login card's premium feel */}
+      <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/[0.03] blur-2xl transition-opacity group-hover:opacity-100" />
     </div>
   );
 }
@@ -75,10 +87,12 @@ function Panel({
   className?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-gray-800 bg-gray-900/60 p-5 ${className}`}>
-      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-        <span className="flex h-6 w-6 items-center justify-center rounded bg-red-600/15 text-red-500">
-          <Icon className="h-3 w-3" />
+    <div
+      className={`rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/80 to-gray-900/40 p-5 ${className}`}
+    >
+      <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-white">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/5 text-red-400">
+          <Icon className="h-3.5 w-3.5" />
         </span>
         {title}
       </div>
@@ -94,8 +108,11 @@ function BarRow({ name, count, max }: { name: string; count: number; max: number
       <span className="w-24 shrink-0 truncate text-gray-300" title={name}>
         {name}
       </span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
-        <div className="h-full rounded-full bg-red-500" style={{ width: `${pct}%` }} />
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-800/80">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
       </div>
       <span className="w-6 shrink-0 text-right font-semibold text-white">{count}</span>
     </div>
@@ -150,7 +167,7 @@ export function StatsDashboard() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600/15 text-red-500">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/5 text-red-400">
             <FaChartBar className="h-5 w-5" />
           </span>
           <div>
@@ -162,13 +179,13 @@ export function StatsDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex overflow-hidden rounded-lg border border-gray-800">
+          <div className="flex overflow-hidden rounded-xl border border-gray-800 bg-gray-900/40">
             <button
               onClick={() => setPreset('today')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 preset === 'today'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-900 text-gray-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
               Hôm nay
@@ -179,8 +196,8 @@ export function StatsDashboard() {
                 onClick={() => setPreset(d)}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   preset === d
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-900 text-gray-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-red-600 to-red-500 text-white'
+                    : 'text-gray-400 hover:text-white'
                 }`}
               >
                 {d} ngày
@@ -190,8 +207,8 @@ export function StatsDashboard() {
               onClick={() => setPreset('custom')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 isCustom
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-900 text-gray-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-red-600 to-red-500 text-white'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
               Tùy chỉnh
@@ -199,7 +216,7 @@ export function StatsDashboard() {
           </div>
 
           {isCustom && (
-            <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-800 bg-gray-900/40 px-3 py-1.5">
               <input
                 type="date"
                 value={customFrom}
@@ -225,7 +242,7 @@ export function StatsDashboard() {
             type="button"
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-red-600/20 transition-all hover:from-red-500 hover:to-red-400 disabled:opacity-60"
             title="Tải lại số liệu"
           >
             <FaSyncAlt className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
@@ -235,29 +252,29 @@ export function StatsDashboard() {
       </div>
 
       {!isAnalyticsConfigured ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6 text-sm text-amber-300">
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 text-sm text-amber-300">
           Supabase chưa được cấu hình. Thêm <code className="text-amber-200">VITE_SUPABASE_URL</code> và{' '}
           <code className="text-amber-200">VITE_SUPABASE_ANON_KEY</code> vào file <code>.env</code>, sau đó
           chạy file <code>supabase-schema.sql</code> trong SQL Editor của dự án Supabase (xem README).
         </div>
       ) : isError ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-300">
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-300">
           Không tải được số liệu: {(error as Error)?.message}
         </div>
       ) : isLoading || !data ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-900/60" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-900/60" />
           ))}
         </div>
       ) : (
         <>
           {/* Stat cards */}
           <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard icon={FaUsers} label="Tổng lượt truy cập" value={data.totalViews} />
-            <StatCard icon={FaCalendarDay} label="Hôm nay" value={data.todayViews} />
-            <StatCard icon={FaPlay} label="Lượt xem phim" value={data.movieViewCount} />
-            <StatCard icon={FaFilm} label="Phim được xem" value={data.uniqueMoviesWatched} />
+            <StatCard icon={FaUsers} label="Tổng lượt truy cập" value={data.totalViews} accent="red" />
+            <StatCard icon={FaCalendarDay} label="Hôm nay" value={data.todayViews} accent="blue" />
+            <StatCard icon={FaPlay} label="Lượt xem phim" value={data.movieViewCount} accent="emerald" />
+            <StatCard icon={FaFilm} label="Phim được xem" value={data.uniqueMoviesWatched} accent="amber" />
           </div>
 
           {/* Referrer donut + daily line chart */}

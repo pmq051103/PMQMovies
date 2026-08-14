@@ -14,6 +14,10 @@ import {
   FaPlus,
   FaHome,
   FaUserPlus,
+  FaChevronLeft,
+  FaChevronRight,
+  FaBars,
+  FaTimes,
 } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
 import { StatsDashboard } from "@/pages/StatsPage";
@@ -490,6 +494,29 @@ export default function AdminPage() {
   const [verifying, setVerifying] = useState(() => Boolean(getStoredToken()));
   const [tab, setTab] = useState<Tab>("stats");
   const [maintenance, setMaintenance] = useState<MaintenanceContent | null>(null);
+  // Sidebar: `collapsed` shrinks it to icon-only on desktop (persists across
+  // reloads); `mobileOpen` is the off-canvas drawer toggle on small screens
+  // (always starts closed — there's no sensible "restore open" on mobile).
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("admin-sidebar-collapsed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("admin-sidebar-collapsed", next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   /* Verify the stored session against the server on first load. */
   useEffect(() => {
@@ -582,66 +609,146 @@ export default function AdminPage() {
         <meta name="robots" content="noindex" />
       </Helmet>
       <div className="min-h-screen bg-gray-950 text-white">
-        {/* Top bar */}
-        <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-            <Link to="/" className="flex items-center gap-3 rounded-lg focus:outline-none">
+        {/* ── Sidebar ──────────────────────────────────────────────────
+            Fixed on the left. On desktop (lg+) it's always visible and
+            just toggles between full (w-64) and icon-only (w-[76px]).
+            On mobile it's an off-canvas drawer — translated out of view
+            until `mobileOpen`, with a backdrop to close it. */}
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-gray-800 bg-gray-950/95 backdrop-blur-sm transition-all duration-200 ease-in-out ${
+            collapsed ? "w-[76px]" : "w-64"
+          } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+        >
+          <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-gray-800 px-4">
+            <Link
+              to="/"
+              className="flex min-w-0 items-center gap-2.5 focus:outline-none"
+            >
               <Logo size="sm" withLink={false} animated={false} />
+              {!collapsed && (
+                <span className="truncate text-sm font-bold tracking-wide">QUẢN TRỊ</span>
+              )}
             </Link>
-            <div className="flex items-center gap-3">
-              <span className="hidden text-sm text-gray-400 sm:inline">
-                {user.display_name || user.username}
-                <span className="mx-1 text-gray-600">·</span>
-                <span className="text-xs text-gray-500">
-                  {user.role === "owner" ? "Chủ sở hữu" : "Quản trị"}
-                </span>
-              </span>
-              <Link
-                to="/"
-                className="flex items-center gap-2 rounded-xl border border-gray-800 px-4 py-2 text-sm text-gray-300 transition-colors hover:border-gray-700 hover:text-white"
-              >
-                <FaHome className="h-3.5 w-3.5" />
-                Trang chủ
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-2 rounded-xl border border-red-900/60 bg-red-950/30 px-4 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-900/40 hover:text-red-200"
-              >
-                <FaSignOutAlt className="h-3.5 w-3.5" />
-                Đăng xuất
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-800 text-gray-400 transition-colors hover:border-gray-700 hover:text-white lg:flex"
+              aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+              title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            >
+              {collapsed ? (
+                <FaChevronRight className="h-3 w-3" />
+              ) : (
+                <FaChevronLeft className="h-3 w-3" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-800 text-gray-400 hover:text-white lg:hidden"
+              aria-label="Đóng menu"
+            >
+              <FaTimes className="h-3.5 w-3.5" />
+            </button>
           </div>
-        </header>
 
-        {/* Tabs */}
-        <nav className="mx-auto max-w-6xl px-4 pt-6">
-          <div className="flex gap-1 rounded-xl border border-gray-800 bg-gray-900/60 p-1">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                onClick={() => {
+                  setTab(t.id);
+                  setMobileOpen(false);
+                }}
+                title={collapsed ? t.label : undefined}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  collapsed ? "justify-center" : ""
+                } ${
                   tab === t.id
-                    ? "bg-red-600 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-600/20"
+                    : "text-gray-400 hover:bg-gray-900 hover:text-white"
                 }`}
               >
                 {t.icon}
-                {t.label}
+                {!collapsed && <span className="truncate">{t.label}</span>}
               </button>
             ))}
-          </div>
-        </nav>
+          </nav>
 
-        {/* Content */}
-        <main className="mx-auto max-w-6xl px-4 py-6">
-          {tab === "stats" && <StatsDashboard />}
-          {tab === "maintenance" && <MaintenanceTab token={token} initial={maintenance} />}
-          {tab === "accounts" && <AccountsTab token={token} />}
-        </main>
+          <div className="shrink-0 space-y-1 border-t border-gray-800 p-3">
+            <div className={`flex items-center gap-3 rounded-xl px-3 py-2 ${collapsed ? "justify-center" : ""}`}>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-700 text-xs font-bold text-white">
+                {(user.display_name || user.username).slice(0, 1).toUpperCase()}
+              </span>
+              {!collapsed && (
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">
+                    {user.display_name || user.username}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">
+                    {user.role === "owner" ? "Chủ sở hữu" : "Quản trị"}
+                  </p>
+                </div>
+              )}
+            </div>
+            <Link
+              to="/"
+              title={collapsed ? "Trang chủ" : undefined}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-400 transition-colors hover:bg-gray-900 hover:text-white ${
+                collapsed ? "justify-center" : ""
+              }`}
+            >
+              <FaHome className="h-4 w-4 shrink-0" />
+              {!collapsed && "Trang chủ"}
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              title={collapsed ? "Đăng xuất" : undefined}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-300 transition-colors hover:bg-red-950/40 hover:text-red-200 ${
+                collapsed ? "justify-center" : ""
+              }`}
+            >
+              <FaSignOutAlt className="h-4 w-4 shrink-0" />
+              {!collapsed && "Đăng xuất"}
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile backdrop — closes the drawer on tap-outside */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* ── Main content, offset by the sidebar's current width ────── */}
+        <div className={`transition-all duration-200 ease-in-out ${collapsed ? "lg:pl-[76px]" : "lg:pl-64"}`}>
+          {/* Mobile top bar — hamburger to open the drawer, since the
+              sidebar itself is off-screen by default on small screens. */}
+          <div className="flex h-14 items-center gap-3 border-b border-gray-800 bg-gray-950/80 px-4 backdrop-blur-sm lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-800 text-gray-300 hover:text-white"
+              aria-label="Mở menu"
+            >
+              <FaBars className="h-3.5 w-3.5" />
+            </button>
+            <span className="text-sm font-semibold text-white">
+              {TABS.find((t) => t.id === tab)?.label}
+            </span>
+          </div>
+
+          <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+            {tab === "stats" && <StatsDashboard />}
+            {tab === "maintenance" && <MaintenanceTab token={token} initial={maintenance} />}
+            {tab === "accounts" && <AccountsTab token={token} />}
+          </main>
+        </div>
       </div>
     </>
   );
