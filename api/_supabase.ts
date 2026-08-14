@@ -23,12 +23,22 @@ export async function rpc<T>(fn: string, params: Record<string, unknown>): Promi
     body: JSON.stringify(params),
   });
 
+  const text = await res.text();
+
   if (!res.ok) {
-    const text = await res.text();
     throw new Error(`supabase rpc ${fn} failed: ${res.status} ${text}`);
   }
 
-  return (await res.json()) as T;
+  // SQL functions declared `returns void` (e.g. set_maintenance,
+  // admin_logout, track_event) make PostgREST respond with an empty
+  // body (200/204, no content) — `res.json()` on "" throws "Unexpected
+  // end of JSON input". Parse manually so void RPCs resolve to
+  // `undefined` instead of crashing every caller that awaits them.
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
 /** Read the Bearer token from an Authorization header. */
