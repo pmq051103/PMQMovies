@@ -620,28 +620,28 @@ export default function AdminPage() {
           } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
         >
           <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-gray-800 px-4">
-            <Link
-              to="/"
-              className="flex min-w-0 items-center gap-2.5 focus:outline-none"
-            >
-              <Logo size="sm" withLink={false} animated={false} />
-              {!collapsed && (
-                <span className="truncate text-sm font-bold tracking-wide">QUẢN TRỊ</span>
-              )}
-            </Link>
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-800 text-gray-400 transition-colors hover:border-gray-700 hover:text-white lg:flex"
-              aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
-              title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
-            >
-              {collapsed ? (
-                <FaChevronRight className="h-3 w-3" />
-              ) : (
-                <FaChevronLeft className="h-3 w-3" />
-              )}
-            </button>
+            {collapsed ? (
+              // The Logo component always renders its full wordmark text
+              // (no prop to hide it), which doesn't fit in a 76px-wide
+              // collapsed rail — so collapsed state uses just the raw
+              // mark image instead of <Logo/>, sized to actually fit.
+              <Link
+                to="/"
+                className="mx-auto flex h-8 w-8 shrink-0 items-center justify-center"
+                aria-label="Không Gian Phim — Trang chủ"
+              >
+                <img
+                  src="/logo.png"
+                  alt="Không Gian Phim"
+                  className="h-8 w-8 object-contain"
+                  draggable={false}
+                />
+              </Link>
+            ) : (
+              <Link to="/" className="flex min-w-0 items-center overflow-hidden focus:outline-none">
+                <Logo size="sm" withLink={false} animated={false} />
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
@@ -651,6 +651,23 @@ export default function AdminPage() {
               <FaTimes className="h-3.5 w-3.5" />
             </button>
           </div>
+
+          {/* Collapse toggle — floats on the sidebar's edge instead of
+              sharing the header row with the logo, so it never gets
+              squeezed out or overlapped regardless of collapsed state. */}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="absolute -right-3 top-[52px] z-50 hidden h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-900 text-gray-400 shadow-md transition-colors hover:border-gray-600 hover:text-white lg:flex"
+            aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+          >
+            {collapsed ? (
+              <FaChevronRight className="h-3 w-3" />
+            ) : (
+              <FaChevronLeft className="h-3 w-3" />
+            )}
+          </button>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
             {TABS.map((t) => (
@@ -743,10 +760,18 @@ export default function AdminPage() {
             </span>
           </div>
 
-          <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <main className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
             {tab === "stats" && <StatsDashboard />}
-            {tab === "maintenance" && <MaintenanceTab token={token} initial={maintenance} />}
-            {tab === "accounts" && <AccountsTab token={token} />}
+            {tab === "maintenance" && (
+              <div className="mx-auto max-w-4xl">
+                <MaintenanceTab token={token} initial={maintenance} />
+              </div>
+            )}
+            {tab === "accounts" && (
+              <div className="mx-auto max-w-4xl">
+                <AccountsTab token={token} />
+              </div>
+            )}
           </main>
         </div>
       </div>

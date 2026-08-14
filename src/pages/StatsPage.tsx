@@ -163,7 +163,7 @@ export function StatsDashboard() {
   const isCustom = preset === 'custom';
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -268,132 +268,145 @@ export function StatsDashboard() {
           ))}
         </div>
       ) : (
-        <>
-          {/* Stat cards */}
-          <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard icon={FaUsers} label="Tổng lượt truy cập" value={data.totalViews} accent="red" />
-            <StatCard icon={FaCalendarDay} label="Hôm nay" value={data.todayViews} accent="blue" />
-            <StatCard icon={FaPlay} label="Lượt xem phim" value={data.movieViewCount} accent="emerald" />
-            <StatCard icon={FaFilm} label="Phim được xem" value={data.uniqueMoviesWatched} accent="amber" />
+        // xl:items-stretch (grid's default) makes the right column match
+        // the left column's total height automatically — that's what lets
+        // "Top pages" fill the tall right side instead of being a short
+        // full-width strip at the bottom.
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          {/* ── Left column: everything except top-pages ────────────── */}
+          <div className="space-y-4 xl:col-span-8">
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <StatCard icon={FaUsers} label="Tổng lượt truy cập" value={data.totalViews} accent="red" />
+              <StatCard icon={FaCalendarDay} label="Hôm nay" value={data.todayViews} accent="blue" />
+              <StatCard icon={FaPlay} label="Lượt xem phim" value={data.movieViewCount} accent="emerald" />
+              <StatCard icon={FaFilm} label="Phim được xem" value={data.uniqueMoviesWatched} accent="amber" />
+            </div>
+
+            {/* Referrer donut + daily line chart */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <Panel icon={FaGlobe} title="Nguồn truy cập">
+                <DonutChart
+                  centerLabel={String(data.totalViews)}
+                  centerSublabel="lượt"
+                  segments={[
+                    { label: 'Vào trực tiếp', value: data.directCount, color: '#ef4444' },
+                    { label: 'Trang khác', value: data.referralCount, color: '#3b82f6' },
+                  ]}
+                />
+                {data.topReferrers.length > 0 && (
+                  <div className="mt-4 border-t border-gray-800 pt-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Nguồn dẫn chi tiết
+                    </p>
+                    <div className="space-y-2">
+                      {data.topReferrers.map((r) => (
+                        <div key={r.name} className="flex items-center justify-between text-sm">
+                          <span className="truncate text-gray-300" title={r.name}>
+                            {r.name}
+                          </span>
+                          <span className="font-semibold text-white">{r.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Panel>
+              <Panel icon={FaChartBar} title="Truy cập theo ngày">
+                <div className="h-44">
+                  <LineChart points={data.dailySeries} />
+                </div>
+              </Panel>
+            </div>
+
+            {/* Top movies / categories / countries */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Panel icon={FaFilm} title="Phim được xem nhiều nhất">
+                {data.topMovies.length === 0 ? (
+                  <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {data.topMovies.map((m) => (
+                      <BarRow key={m.name} name={m.name} count={m.count} max={maxMovie} />
+                    ))}
+                  </div>
+                )}
+              </Panel>
+              <Panel icon={FaTags} title="Xem theo thể loại">
+                {data.topCategories.length === 0 ? (
+                  <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {data.topCategories.map((c) => (
+                      <BarRow key={c.name} name={c.name} count={c.count} max={maxCategory} />
+                    ))}
+                  </div>
+                )}
+              </Panel>
+              <Panel icon={FaGlobe} title="Xem theo quốc gia">
+                {data.topCountries.length === 0 ? (
+                  <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {data.topCountries.map((c) => (
+                      <BarRow key={c.name} name={c.name} count={c.count} max={maxCountry} />
+                    ))}
+                  </div>
+                )}
+              </Panel>
+            </div>
           </div>
 
-          {/* Referrer donut + daily line chart */}
-          <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Panel icon={FaGlobe} title="Nguồn truy cập">
-              <DonutChart
-                centerLabel={String(data.totalViews)}
-                centerSublabel="lượt"
-                segments={[
-                  { label: 'Vào trực tiếp', value: data.directCount, color: '#ef4444' },
-                  { label: 'Trang khác', value: data.referralCount, color: '#3b82f6' },
-                ]}
-              />
-              {data.topReferrers.length > 0 && (
-                <div className="mt-4 border-t border-gray-800 pt-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Nguồn dẫn chi tiết
-                  </p>
-                  <div className="space-y-2">
-                    {data.topReferrers.map((r) => (
-                      <div key={r.name} className="flex items-center justify-between text-sm">
-                        <span className="truncate text-gray-300" title={r.name}>
-                          {r.name}
-                        </span>
-                        <span className="font-semibold text-white">{r.count}</span>
+          {/* ── Right column: top pages, stretched to match the left
+              column's full height (grid's default stretch alignment). ── */}
+          <div className="xl:col-span-4">
+            <Panel icon={FaHashtag} title="Trang được truy cập nhiều nhất" className="flex h-full flex-col">
+              {data.topPaths.length === 0 ? (
+                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+              ) : (
+                <>
+                  <div className="flex-1 space-y-2.5 overflow-y-auto">
+                    {pagedPaths.map((p) => (
+                      <div
+                        key={p.path}
+                        className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-gray-900/60"
+                      >
+                        <span className="truncate text-gray-300">{p.path}</span>
+                        <span className="shrink-0 font-semibold text-white">{p.count}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </Panel>
-            <Panel icon={FaChartBar} title="Truy cập theo ngày">
-              <div className="h-44">
-                <LineChart points={data.dailySeries} />
-              </div>
-            </Panel>
-          </div>
 
-          {/* Top movies / categories / countries */}
-          <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Panel icon={FaFilm} title="Phim được xem nhiều nhất">
-              {data.topMovies.length === 0 ? (
-                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {data.topMovies.map((m) => (
-                    <BarRow key={m.name} name={m.name} count={m.count} max={maxMovie} />
-                  ))}
-                </div>
-              )}
-            </Panel>
-            <Panel icon={FaTags} title="Xem theo thể loại">
-              {data.topCategories.length === 0 ? (
-                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {data.topCategories.map((c) => (
-                    <BarRow key={c.name} name={c.name} count={c.count} max={maxCategory} />
-                  ))}
-                </div>
-              )}
-            </Panel>
-            <Panel icon={FaGlobe} title="Xem theo quốc gia">
-              {data.topCountries.length === 0 ? (
-                <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {data.topCountries.map((c) => (
-                    <BarRow key={c.name} name={c.name} count={c.count} max={maxCountry} />
-                  ))}
-                </div>
-              )}
-            </Panel>
-          </div>
-
-          {/* Top pages */}
-          <Panel icon={FaHashtag} title="Trang được truy cập nhiều nhất">
-            {data.topPaths.length === 0 ? (
-              <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
-            ) : (
-              <>
-                <div className="space-y-2.5">
-                  {pagedPaths.map((p) => (
-                    <div key={p.path} className="flex items-center justify-between text-sm">
-                      <span className="truncate text-gray-300">{p.path}</span>
-                      <span className="font-semibold text-white">{p.count}</span>
+                  {totalPathsPages > 1 && (
+                    <div className="mt-4 flex items-center justify-between border-t border-gray-800 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setPathsPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPathsPage === 1}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <FaChevronLeft className="h-2.5 w-2.5" />
+                        Trước
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Trang {currentPathsPage}/{totalPathsPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPathsPage((p) => Math.min(totalPathsPages, p + 1))}
+                        disabled={currentPathsPage === totalPathsPages}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        Sau
+                        <FaChevronRight className="h-2.5 w-2.5" />
+                      </button>
                     </div>
-                  ))}
-                </div>
-
-                {totalPathsPages > 1 && (
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-800 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setPathsPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPathsPage === 1}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                    >
-                      <FaChevronLeft className="h-2.5 w-2.5" />
-                      Trước
-                    </button>
-                    <span className="text-xs text-gray-500">
-                      Trang {currentPathsPage}/{totalPathsPages}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPathsPage((p) => Math.min(totalPathsPages, p + 1))}
-                      disabled={currentPathsPage === totalPathsPages}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                    >
-                      Sau
-                      <FaChevronRight className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </Panel>
-        </>
+                  )}
+                </>
+              )}
+            </Panel>
+          </div>
+        </div>
       )}
     </div>
   );
