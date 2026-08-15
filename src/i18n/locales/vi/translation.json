@@ -106,7 +106,9 @@
       "series": "Phim Bộ",
       "hoathinh": "Hoạt Hình",
       "tvshows": "TV Shows"
-    }
+    },
+    "addToFavorites": "Thêm vào yêu thích",
+    "details": "Chi tiết"
   },
   "watch": {
     "server": "Máy Chủ",

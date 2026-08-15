@@ -106,7 +106,9 @@
       "series": "Series",
       "hoathinh": "Anime",
       "tvshows": "TV Shows"
-    }
+    },
+    "addToFavorites": "Add to favorites",
+    "details": "Details"
   },
   "watch": {
     "server": "Server",

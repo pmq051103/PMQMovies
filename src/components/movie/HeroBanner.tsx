@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlay, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaPlay, FaHeart, FaInfoCircle } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
-import { getMoviePoster } from '@/utils';
+import { getMoviePoster, onImgError } from '@/utils';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useMovieDetail } from '@/hooks/useMovieQueries';
+import { useFavoriteStore } from '@/store/useFavoriteStore';
 import type { MovieListItem } from '@/types';
 
 interface HeroBannerProps {
   movies: MovieListItem[];
 }
 
-const MAX_SLIDES = 5;
+const MAX_SLIDES = 6;
 const AUTOPLAY_INTERVAL = 6000;
 
 const slideVariants = {
@@ -30,12 +33,31 @@ const slideVariants = {
   }),
 };
 
+/** Episode status badge — "Hoàn Tất (24/24)" → "Tập Hoàn Tất (24/24)", "Tập 12" → "Tập 12". */
+function episodeStatus(movie: MovieListItem): string {
+  const ep = movie.episode_current;
+  if (!ep) return '';
+  if (/hoàn tất|full/i.test(ep)) {
+    const match = ep.match(/(\d+)\s*\/\s*(\d+)/);
+    return match ? `Tập Hoàn Tất (${match[1]}/${match[2]})` : 'Full';
+  }
+  return ep;
+}
+
+/** Strips HTML tags from the raw `content` field some sources include. */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim();
+}
+
 const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
   const { t } = useTranslation();
+  const isMobile = useMediaQuery('(max-width: 639px)');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [failedSlugs, setFailedSlugs] = useState<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const { isFavorite, toggleFavorite } = useFavoriteStore();
 
   // Filter out slides with empty URLs AND slides whose images failed to load
   const slides = movies
@@ -89,12 +111,179 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
     return clearAutoplay;
   }, [startAutoplay, clearAutoplay]);
 
-  if (!slides.length) return null;
+  const current = slides[currentIndex] as MovieListItem | undefined;
 
-  const current = slides[currentIndex];
+  // The "latest movies" feed that powers this banner (useLatestMovies) is a
+  // lightweight list endpoint — it doesn't include genres or the
+  // description. Fetch those separately for whichever slide is showing;
+  // React Query caches per-slug, so autoplay cycling through slides
+  // doesn't refetch a slide once it's already been shown once. Called
+  // unconditionally (before the `!slides.length` early return below) to
+  // keep hook call order stable across renders — useMovieDetail no-ops
+  // internally when slug is undefined.
+  const { data: detailData } = useMovieDetail(current?.slug);
 
+  if (!current) return null;
+
+  const detailUrl = `${ROUTES.MOVIE_DETAIL}/${current.slug}`;
+  const season = current.tmdb?.season;
+  const rating = current.tmdb?.vote_average ? parseFloat(String(current.tmdb.vote_average)) : null;
+  const episode = episodeStatus(current);
+  const favorited = isFavorite(current.slug);
+  const categories = detailData?.movie?.category;
+  const description = detailData?.movie?.content ? stripHtml(detailData.movie.content) : '';
+
+  /* ------------------------------------------------------------------ */
+  /* Mobile — "peek" carousel: dimmed/smaller prev + next poster cards   */
+  /* poking in from the edges, full-size current card centered.         */
+  /* Same info as desktop (badges, genres) minus the description.       */
+  /* ------------------------------------------------------------------ */
+  if (isMobile) {
+    return (
+      <section className="always-dark relative w-full bg-black pb-5 pt-3">
+        {/* Peek carousel — full-bleed, edges cropped by the section */}
+        <div
+          className="relative h-[320px] w-full overflow-hidden"
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null) return;
+            const delta = e.changedTouches[0].clientX - touchStartX.current;
+            if (delta > 40) goPrev();
+            else if (delta < -40) goNext();
+            touchStartX.current = null;
+          }}
+        >
+          {[-1, 0, 1].map((offset) => {
+            const idx = (currentIndex + offset + slides.length) % slides.length;
+            const slide = slides[idx];
+            const isCenter = offset === 0;
+            return (
+              <button
+                key={`${slide._id}-${offset}`}
+                type="button"
+                onClick={() => !isCenter && goToSlide(idx)}
+                aria-label={slide.name}
+                className="absolute top-0 aspect-[2/3] w-[58%] overflow-hidden rounded-2xl shadow-xl transition-all duration-300 ease-out"
+                style={{
+                  left: '50%',
+                  zIndex: isCenter ? 20 : 10,
+                  opacity: isCenter ? 1 : 0.45,
+                  transform: `translateX(calc(-50% + ${offset * 68}%)) scale(${isCenter ? 1 : 0.86})`,
+                }}
+              >
+                <img
+                  src={getMoviePoster(slide.poster_url, slide.thumb_url)}
+                  alt={slide.name}
+                  className="h-full w-full object-cover"
+                  loading={offset === 0 && currentIndex === 0 ? 'eager' : 'lazy'}
+                  onError={() => setFailedSlugs((prev) => new Set(prev).add(slide.slug))}
+                />
+                {!isCenter && <div className="absolute inset-0 bg-black/40" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Info block below the carousel */}
+        <div className="px-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current._id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mt-3"
+            >
+              <h1 className="line-clamp-1 text-center text-lg font-bold text-white">{current.name}</h1>
+              {current.origin_name && current.origin_name !== current.name && (
+                <p className="mt-0.5 line-clamp-1 text-center text-xs italic text-gray-400">
+                  {current.origin_name}
+                </p>
+              )}
+
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                {rating !== null && rating > 0 && (
+                  <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-gray-900">
+                    IMDb {rating.toFixed(1)}
+                  </span>
+                )}
+                {current.year > 0 && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-gray-200">
+                    {current.year}
+                  </span>
+                )}
+                {season ? (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-gray-200">
+                    Phần {season}
+                  </span>
+                ) : null}
+                {episode && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-gray-200">
+                    {episode}
+                  </span>
+                )}
+              </div>
+
+              {/* {categories && categories.length > 0 && (
+                <p className="mt-2 line-clamp-1 text-center text-xs text-gray-400">
+                  {categories.slice(0, 4).map((c) => c.name).join(' • ')}
+                </p>
+              )} */}
+
+              {/* Dot pagination */}
+              {slides.length > 1 && (
+                <div className="mt-3 flex items-center justify-center gap-1.5">
+                  {slides.map((slide, idx) => (
+                    <button
+                      key={slide._id}
+                      onClick={() => goToSlide(idx)}
+                      aria-label={`${t('movie.goToSlide')} ${idx + 1}`}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === currentIndex ? 'w-5 bg-amber-400' : 'w-1.5 bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <Link
+                  to={detailUrl}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-2.5 text-sm font-bold text-gray-900 shadow-lg shadow-amber-400/20 active:scale-[0.98]"
+                >
+                  <FaPlay className="h-3 w-3" />
+                  {t('movie.watchNow')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleFavorite(current);
+                  }}
+                  aria-label={t('movie.addToFavorites')}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                    favorited ? 'bg-red-600 text-white' : 'bg-white/10 text-gray-200'
+                  }`}
+                >
+                  <FaHeart className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </section>
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Desktop — full-width landscape banner with slide thumbnail strip.   */
+  /* ------------------------------------------------------------------ */
   return (
-    <section className="always-dark relative w-full aspect-[3/2] min-h-[240px] max-h-[400px] overflow-hidden bg-black sm:aspect-auto sm:min-h-[560px] sm:h-[70vh] sm:max-h-[820px]">
+    <section className="always-dark relative w-full overflow-hidden bg-black sm:h-[70vh] sm:min-h-[560px] sm:max-h-[820px]">
       {/* Background image with AnimatePresence */}
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
@@ -112,21 +301,18 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
             alt={current.name}
             className="h-full w-full object-cover"
             loading={currentIndex === 0 ? 'eager' : 'lazy'}
-            onError={() => {
-              // Mark this slide as failed → it gets filtered out, auto-advances
-              setFailedSlugs((prev) => new Set(prev).add(current.slug));
-            }}
+            onError={() => setFailedSlugs((prev) => new Set(prev).add(current.slug))}
           />
         </motion.div>
       </AnimatePresence>
 
       {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
 
       {/* Content */}
       <div className="absolute inset-0 flex items-end">
-        <div className="w-full max-w-7xl mx-auto px-3 pb-4 sm:px-6 sm:pb-16 lg:px-8 lg:pb-20">
+        <div className="mx-auto w-full max-w-7xl px-6 pb-16 lg:px-8 lg:pb-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={current._id}
@@ -137,32 +323,86 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
               className="max-w-2xl"
             >
               {/* Title */}
-              <h1 className="text-lg font-bold leading-tight text-white sm:text-3xl md:text-5xl lg:text-6xl drop-shadow-lg line-clamp-2 sm:line-clamp-none">
+              <h1 className="text-3xl font-bold leading-tight text-white drop-shadow-lg md:text-5xl lg:text-6xl">
                 {current.name}
               </h1>
 
               {/* Subtitle / origin name */}
               {current.origin_name && current.origin_name !== current.name && (
-                <p className="mt-1 text-xs text-gray-300 italic sm:mt-2 sm:text-lg md:text-xl line-clamp-1">
-                  {current.origin_name}
-                </p>
+                <p className="mt-2 text-lg italic text-gray-300 md:text-xl">{current.origin_name}</p>
               )}
 
-              {/* Year */}
-              {current.year > 0 && (
-                <span className="mt-1.5 inline-block rounded bg-white/10 px-2 py-0.5 text-xs font-medium text-gray-200 backdrop-blur-sm sm:mt-3 sm:px-3 sm:py-1 sm:text-sm">
-                  {current.year}
-                </span>
+              {/* Badges row */}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {rating !== null && rating > 0 && (
+                  <span className="rounded-full bg-amber-400 px-3 py-1 text-sm font-bold text-gray-900">
+                    IMDb {rating.toFixed(1)}
+                  </span>
+                )}
+                {current.year > 0 && (
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-gray-200 backdrop-blur-sm">
+                    {current.year}
+                  </span>
+                )}
+                {season ? (
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-gray-200 backdrop-blur-sm">
+                    Phần {season}
+                  </span>
+                ) : null}
+                {episode && (
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-gray-200 backdrop-blur-sm">
+                    {episode}
+                  </span>
+                )}
+              </div>
+
+              {/* Genre tags */}
+              {categories && categories.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm text-gray-300">
+                  {categories.slice(0, 5).map((cat, idx) => (
+                    <span key={cat.slug} className="flex items-center gap-2">
+                      {cat.name}
+                      {idx < Math.min(categories.length, 5) - 1 && (
+                        <span className="h-1 w-1 rounded-full bg-gray-500" />
+                      )}
+                    </span>
+                  ))}
+                </div>
               )}
 
-              {/* Play button */}
-              <div className="mt-2.5 sm:mt-6">
+              {/* Description */}
+              {description && (
+                <p className="mt-3 line-clamp-2 text-sm text-gray-300 md:text-base">{description}</p>
+              )}
+
+              {/* Buttons */}
+              <div className="mt-6 flex items-center gap-3">
                 <Link
-                  to={`${ROUTES.MOVIE_DETAIL}/${current.slug}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-lg shadow-red-600/30 transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                  to={detailUrl}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-400 text-gray-900 shadow-lg shadow-amber-400/30 transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                  aria-label={t('movie.watchNow')}
+                  title={t('movie.watchNow')}
                 >
-                  <FaPlay className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <span>{t('movie.watchNow')}</span>
+                  <FaPlay className="h-4 w-4 translate-x-0.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleFavorite(current)}
+                  aria-label={t('movie.addToFavorites')}
+                  title={t('movie.addToFavorites')}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-colors ${
+                    favorited ? 'bg-red-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/20'
+                  }`}
+                >
+                  <FaHeart className="h-4 w-4" />
+                </button>
+                <Link
+                  to={detailUrl}
+                  aria-label={t('movie.details')}
+                  title={t('movie.details')}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-gray-200 backdrop-blur-sm transition-colors hover:bg-white/20"
+                >
+                  <FaInfoCircle className="h-4 w-4" />
                 </Link>
               </div>
             </motion.div>
@@ -170,29 +410,36 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
         </div>
       </div>
 
-      {/* Previous / Next arrows */}
+      {/* Slide thumbnail strip — bottom right */}
       {slides.length > 1 && (
-        <>
-          <button
-            onClick={goPrev}
-            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100 sm:opacity-70"
-            aria-label={t('common.previous')}
-          >
-            <FaChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            onClick={goNext}
-            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100 sm:opacity-70"
-            aria-label={t('common.next')}
-          >
-            <FaChevronRight className="h-4 w-4" />
-          </button>
-        </>
+        <div className="absolute bottom-6 right-6 z-10 hidden items-center gap-2 lg:flex">
+          {slides.map((slide, idx) => (
+            <button
+              key={slide._id}
+              onClick={() => goToSlide(idx)}
+              aria-label={slide.name}
+              title={slide.name}
+              className={`relative h-14 w-24 shrink-0 overflow-hidden rounded-md border-2 transition-all duration-300 ${
+                idx === currentIndex
+                  ? 'border-amber-400 opacity-100'
+                  : 'border-transparent opacity-50 hover:opacity-80'
+              }`}
+            >
+              <img
+                src={getMoviePoster(slide.thumb_url, slide.poster_url)}
+                alt={slide.name}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                onError={onImgError}
+              />
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Dot indicators */}
+      {/* Dot indicators — smaller screens without the thumbnail strip */}
       {slides.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-6 sm:gap-2">
+        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 lg:hidden">
           {slides.map((slide, idx) => (
             <button
               key={slide._id}
@@ -200,7 +447,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
               aria-label={`${t('movie.goToSlide')} ${idx + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 idx === currentIndex
-                  ? 'h-3 w-3 bg-red-500 shadow-md shadow-red-500/50'
+                  ? 'h-3 w-3 bg-amber-400 shadow-md shadow-amber-400/50'
                   : 'h-2 w-2 bg-white/40 hover:bg-white/70'
               }`}
             />
