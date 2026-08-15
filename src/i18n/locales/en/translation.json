@@ -247,7 +247,9 @@
     "first": "First",
     "last": "Last",
     "previous": "Previous",
+    "page": "Page",
     "goToPage": "Go to page {{page}}",
+    "goToPageInput": "Enter page number",
     "navigation": "Pagination Navigation"
   },
   "notFound": {

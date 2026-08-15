@@ -33,14 +33,28 @@ const slideVariants = {
   }),
 };
 
-/** Episode status badge — "Hoàn Tất (24/24)" → "Tập Hoàn Tất (24/24)", "Tập 12" → "Tập 12". */
+/**
+ * Episode badge — same logic as MovieCard.tsx / SpotlightGrid.tsx (kept
+ * in sync manually, not worth extracting to a shared util for 3 call
+ * sites): "Hoàn Tất (24/24)" → "24/24", "Tập 12" + episode_total "32" →
+ * "12/32", "Tập 12" with no known total → "Tập 12", "Full" → "Full".
+ * The previous version here only handled the "already complete" case
+ * and never looked up `episode_total` for an ongoing series, so an
+ * in-progress show showed as bare "Tập 12" instead of "12/32".
+ */
 function episodeStatus(movie: MovieListItem): string {
   const ep = movie.episode_current;
   if (!ep) return '';
-  if (/hoàn tất|full/i.test(ep)) {
-    const match = ep.match(/(\d+)\s*\/\s*(\d+)/);
-    return match ? `Tập Hoàn Tất (${match[1]}/${match[2]})` : 'Full';
+  const match = ep.match(/(\d+)\s*\/\s*(\d+)/);
+  if (match) return `${match[1]}/${match[2]}`;
+  const tapMatch = ep.match(/[Tt]ập\s*(\d+)/);
+  if (tapMatch) {
+    const current = tapMatch[1];
+    const total = (movie as MovieListItem & { episode_total?: string }).episode_total;
+    if (total && total !== '?' && total !== '0') return `${current}/${total}`;
+    return `Tập ${current}`;
   }
+  if (ep === 'Full') return 'Full';
   return ep;
 }
 
@@ -128,10 +142,23 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
   const detailUrl = `${ROUTES.MOVIE_DETAIL}/${current.slug}`;
   const season = current.tmdb?.season;
   const rating = current.tmdb?.vote_average ? parseFloat(String(current.tmdb.vote_average)) : null;
-  const episode = episodeStatus(current);
   const favorited = isFavorite(current.slug);
   const categories = detailData?.movie?.category;
   const description = detailData?.movie?.content ? stripHtml(detailData.movie.content) : '';
+  // Same "lightweight feed is missing fields" situation as categories/
+  // description above — fall back to the full detail fetch when the
+  // list item itself doesn't carry episode_current (this is genuinely
+  // why the badge could render nothing at all, not just render it
+  // poorly formatted).
+  const episodeSource: MovieListItem =
+    current.episode_current
+      ? current
+      : {
+          ...current,
+          episode_current: detailData?.movie?.episode_current ?? current.episode_current,
+          episode_total: detailData?.movie?.episode_total ?? current.episode_total,
+        };
+  const episode = episodeStatus(episodeSource);
 
   /* ------------------------------------------------------------------ */
   /* Mobile — "peek" carousel: dimmed/smaller prev + next poster cards   */
@@ -141,9 +168,14 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
   if (isMobile) {
     return (
       <section className="always-dark relative w-full bg-black pb-5 pt-3">
-        {/* Peek carousel — full-bleed, edges cropped by the section */}
+        {/* Peek carousel — full-bleed, edges cropped by the section.
+            Height is `90vw` (not a fixed px) because the card is
+            `w-[58%]` wide at `aspect-[2/3]`, so its real rendered
+            height is `0.58 * 1.5 ≈ 0.87` of the viewport width — a
+            fixed 320px was shorter than that on most phone widths,
+            silently clipping the bottom of every poster. */}
         <div
-          className="relative h-[320px] w-full overflow-hidden"
+          className="relative h-[90vw] max-h-[420px] w-full overflow-hidden"
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
           }}
@@ -161,7 +193,17 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ movies }) => {
             const isCenter = offset === 0;
             return (
               <button
-                key={`${slide._id}-${offset}`}
+                // Keyed by the movie only — NOT combined with `offset` —
+                // so a given movie keeps the same DOM node as it moves
+                // between slots (e.g. center → left-peek) across slide
+                // changes, letting `transition-all duration-300` below
+                // actually interpolate the position/scale/opacity change
+                // smoothly instead of unmounting and remounting a fresh
+                // node already in its final spot (which caused the jump).
+                // Falls back to including `offset` only when there are
+                // fewer than 3 slides, since then two offsets can land on
+                // the same movie and a plain movie-only key would collide.
+                key={slides.length >= 3 ? slide._id : `${slide._id}-${offset}`}
                 type="button"
                 onClick={() => !isCenter && goToSlide(idx)}
                 aria-label={slide.name}

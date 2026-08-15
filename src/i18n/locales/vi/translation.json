@@ -247,7 +247,9 @@
     "first": "Đầu",
     "last": "Cuối",
     "previous": "Trước",
+    "page": "Trang",
     "goToPage": "Đến trang {{page}}",
+    "goToPageInput": "Nhập số trang",
     "navigation": "Điều Hướng Trang"
   },
   "notFound": {

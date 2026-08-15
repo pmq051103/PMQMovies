@@ -16,6 +16,31 @@ interface SpotlightGridProps {
 }
 
 /**
+ * Formats a movie's episode status into a compact badge, same logic as
+ * MovieCard.tsx (kept in sync manually since it's a tiny pure function —
+ * not worth extracting to a shared util for just two call sites):
+ *   "Hoàn Tất (24/24)" → "24/24"   (completed series, already has both numbers)
+ *   "Tập 12" + episode_total "32"  → "12/32"   (ongoing series, ep total known)
+ *   "Tập 12" (no total)            → "Tập 12"  (ongoing, total unknown)
+ *   "Full" (single-episode movie)  → "Full"
+ */
+function formatEpisodeBadge(movie: MovieListItem): string {
+  const ep = movie.episode_current;
+  if (!ep) return "";
+  const match = ep.match(/(\d+)\s*\/\s*(\d+)/);
+  if (match) return `${match[1]}/${match[2]}`;
+  const tapMatch = ep.match(/[Tt]ập\s*(\d+)/);
+  if (tapMatch) {
+    const current = tapMatch[1];
+    const total = (movie as MovieListItem & { episode_total?: string }).episode_total;
+    if (total && total !== "?" && total !== "0") return `${current}/${total}`;
+    return `Tập ${current}`;
+  }
+  if (ep === "Full") return "Full";
+  return ep;
+}
+
+/**
  * Motchill-style asymmetric spotlight grid: one large hero card (16:9)
  * with rich overlay info paired with a 2×2 grid of smaller cards next to
  * it. Perfect for "Phim đề cử" / "Đang hot" sections that should stand
@@ -43,6 +68,7 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
   const heroRating = hero.tmdb?.vote_average
     ? parseFloat(String(hero.tmdb.vote_average))
     : null;
+  const heroEpisodeBadge = formatEpisodeBadge(hero);
 
   return (
     <section className="w-full">
@@ -74,6 +100,11 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+              {heroEpisodeBadge && (
+                <span className="rounded bg-green-600/90 px-2 py-0.5 font-bold text-white backdrop-blur">
+                  {heroEpisodeBadge}
+                </span>
+              )}
               {hero.year > 0 && (
                 <span className="rounded bg-white/15 px-2 py-0.5 text-white backdrop-blur">
                   {hero.year}
@@ -103,6 +134,7 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
             const rating = m.tmdb?.vote_average
               ? parseFloat(String(m.tmdb.vote_average))
               : null;
+            const episodeBadge = formatEpisodeBadge(m);
             return (
               <Link
                 key={m._id ?? m.slug}
@@ -118,6 +150,11 @@ const SpotlightGrid: React.FC<SpotlightGridProps> = ({
                   onError={() => handleImgError(m.slug)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                {episodeBadge && (
+                  <span className="absolute right-1.5 top-1.5 rounded bg-green-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                    {episodeBadge}
+                  </span>
+                )}
                 <div className="absolute inset-x-0 bottom-0 p-3">
                   <h4 className="line-clamp-2 text-sm font-semibold text-white drop-shadow">
                     {m.name}
